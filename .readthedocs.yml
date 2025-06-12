@@ -1,19 +1,19 @@
-# .readthedocs.yml — Read the Docs configuration
-# https://docs.readthedocs.io/en/stable/config-file/v2.html
-
+# .readthedocs.yml
 version: 2
 
-# Tell RTD where to find your Sphinx conf.py
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.12"
+
 sphinx:
   configuration: docs/source/conf.py
 
-# Python environment for building the docs
 python:
-  version: 3.12  # match your project’s requires-python
   install:
-    # Install the package itself so extensions (autodoc) can import it
+    # install your package so autodoc can import it
     - method: pip
       path: .
-    # Install development extras (including Sphinx, theme, napoleon, myst-parser, etc.)
+    # install dev extras (Sphinx, theme, napoleon, myst-parser, etc.)
     - method: pip
       args: ["-e", ".[dev]"]
