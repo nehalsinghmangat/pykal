@@ -4,22 +4,23 @@
    contain the root `toctree` directive.
 
 pykal Documentation
-======================
+===================
 
-**pykal**  is a Python library for generating state estimates from measurement data using the various flavors of the Kalman Filter algorithm.  
+**pykal** is a Python library for generating state estimates from measurement data using the various flavors of the Kalman Filter algorithm.
+
 .. note::
 
    This project is under active development.
 
 .. toctree::
-:maxdepth: 2
-:caption: Contents:
+   :maxdepth: 2
+   :caption: Contents:
 
-installation
-quickstart
-theory
-api/index
-cookbook
-faq
-changelog
+   installation
+   quickstart
+   theory
+   api/index
+   cookbook
+   faq
+   changelog
 
