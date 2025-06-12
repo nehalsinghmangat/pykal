@@ -1,0 +1,215 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Utilities &mdash; pykal 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            pykal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Utilities</a><ul>
+<li><a class="reference internal" href="#pykal.utils.call.call"><code class="docutils literal notranslate"><span class="pre">call()</span></code></a></li>
+<li><a class="reference internal" href="#pykal.utils.systemtype.SystemType"><code class="docutils literal notranslate"><span class="pre">SystemType</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">pykal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Utilities</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/utils.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="utilities">
+<h1>Utilities<a class="headerlink" href="#utilities" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="pykal.utils.call.call">
+<span class="sig-prename descclassname"><span class="pre">pykal.utils.call.</span></span><span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.13)"><span class="pre">Callable</span></a></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pykal.utils.call.call" title="Link to this definition"></a></dt>
+<dd><p>Smart wrapper that calls a user-supplied function with exactly the keyword
+arguments it declares—and fails if the signature is empty or contains
+unsupported parameters.</p>
+<dl class="simple">
+<dt>Supported parameter names are:</dt><dd><ul class="simple">
+<li><p>for state:     <cite>x</cite>, <cite>x_k</cite>, <cite>state</cite></p></li>
+<li><p>for input:     <cite>u</cite>, <cite>u_k</cite>, <cite>input</cite></p></li>
+<li><p>for time:      <cite>t</cite>, <cite>t_k</cite>, <cite>time</cite>, <cite>tau</cite></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>func</strong> (<em>Callable</em>) – A Python callable whose signature may include any subset of the
+supported names above.</p></li>
+<li><p><strong>x</strong> (<em>any</em><em>, </em><em>optional</em>) – Value to pass to <cite>func</cite> if it declares one of <cite>x</cite>, <cite>x_k</cite>, or <cite>state</cite>.</p></li>
+<li><p><strong>u</strong> (<em>any</em><em>, </em><em>optional</em>) – Value to pass to <cite>func</cite> if it declares one of <cite>u</cite>, <cite>u_k</cite>, or <cite>input</cite>.</p></li>
+<li><p><strong>t</strong> (<em>any</em><em>, </em><em>optional</em>) – Value to pass to <cite>func</cite> if it declares one of <cite>t</cite>, <cite>t_k</cite>, <cite>time</cite>, or <cite>tau</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The return value from <cite>func</cite>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> – If <cite>func</cite> declares none of the supported parameters, or if it declares
+    any parameters outside the supported set.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">f1</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">call</span><span class="p">(</span><span class="n">f1</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">11</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">f2</span><span class="p">(</span><span class="n">u_k</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="p">(</span><span class="n">u_k</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">call</span><span class="p">(</span><span class="n">f2</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">u</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">(5, 3)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">f3</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">time</span> <span class="o">*</span> <span class="nb">input</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">call</span><span class="p">(</span><span class="n">f3</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">u</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="go">24</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">f_invalid</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="kc">None</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">call</span><span class="p">(</span><span class="n">f_invalid</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">Function &#39;f_invalid&#39; declares no supported parameters; expected one of: input, state, t, t_k, tau, time, u, u_k, x, x_k</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">f_invalid2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="kc">None</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">call</span><span class="p">(</span><span class="n">f_invalid2</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">Function &#39;f_invalid2&#39; declares unsupported parameters: y</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pykal.utils.systemtype.SystemType">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pykal.utils.systemtype.</span></span><span class="sig-name descname"><span class="pre">SystemType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pykal.utils.systemtype.SystemType" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.Enum" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></a></p>
+<p>Enumeration of timing assumptions for plant / measurement models.</p>
+<section id="members">
+<h2>Members<a class="headerlink" href="#members" title="Link to this heading"></a></h2>
+<dl>
+<dt>CONTINUOUS_TIME_INVARIANT</dt><dd><div class="math notranslate nohighlight">
+\[\dot x = f(x, u)\]</div>
+<p>(no explicit time argument)</p>
+</dd>
+<dt>CONTINUOUS_TIME_VARYING</dt><dd><div class="math notranslate nohighlight">
+\[\dot x = f(x, u, t)\]</div>
+</dd>
+<dt>DISCRETE_TIME_INVARIANT</dt><dd><div class="math notranslate nohighlight">
+\[x_{k+1} = f(x_k, u_k)\]</div>
+</dd>
+<dt>DISCRETE_TIME_VARYING</dt><dd><div class="math notranslate nohighlight">
+\[x_{k+1} = f(x_k, u_k, t_k)\]</div>
+</dd>
+</dl>
+<p>This enum exists purely for type-safety and clarity when specifying
+your system’s timing assumptions.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">SystemType</span><span class="o">.</span><span class="n">CONTINUOUS_TIME_INVARIANT</span><span class="o">.</span><span class="n">name</span>
+<span class="go">&#39;CONTINUOUS_TIME_INVARIANT&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">SystemType</span><span class="o">.</span><span class="n">DISCRETE_TIME_VARYING</span> <span class="ow">is</span> <span class="n">SystemType</span><span class="p">[</span><span class="s1">&#39;DISCRETE_TIME_VARYING&#39;</span><span class="p">]</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Nehal Singh Mangat.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
