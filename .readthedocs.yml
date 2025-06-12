@@ -1,19 +1,18 @@
 # .readthedocs.yml
 version: 2
 
+# Use Ubuntu 22.04 and Python 3.12
 build:
   os: ubuntu-22.04
   tools:
     python: "3.12"
 
+# Point Sphinx at your conf.py
 sphinx:
   configuration: docs/source/conf.py
 
+# Install your package (with dev extras so all doc‐build deps are present)
 python:
   install:
-    # install your package so autodoc can import it
-    - method: pip
-      path: .
-    # install dev extras (Sphinx, theme, napoleon, myst-parser, etc.)
-    - method: pip
-      args: ["-e", ".[dev]"]
+    - path: .
+      extra_requirements: ["dev"]
