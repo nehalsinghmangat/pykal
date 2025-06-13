@@ -14,6 +14,8 @@ extensions = [
     'sphinx.ext.doctest',      # Test code in docstrings
     'sphinx.ext.intersphinx',  # Link to other projects' docs
     'sphinx.ext.autosummary',  # Generate API summary pages
+    "nbsphinx",         # renders .ipynb as pages
+    "sphinx.ext.mathjax",    
 ]
 
 # Automatically generate stub pages for documented modules

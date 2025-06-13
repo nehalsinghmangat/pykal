@@ -18,9 +18,11 @@ pykal Documentation
 
    installation
    quickstart
+   cookbook
+   examples/index
    theory
    api/index
-   cookbook
    faq
    changelog
+
 
