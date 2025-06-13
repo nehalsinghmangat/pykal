@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 from typing import Callable, Literal, Optional, Sequence, Tuple, Union
 from .utils.call import call
 from .utils.systemtype import SystemType
-from .skf import SKF
+from .pskf import PSKF
 
 
-class OPSKF(SKF):
+class OPSKF(PSKF):
     """
     Observability-informed Partial-Update Schmidt-Kalman Filter (OPSKF) [Ramos et al., 2021].
 
