@@ -26,6 +26,7 @@ Dynamics / Models
 .. autofunction:: pykal.utils.dynamics.logistic_map
 
 # control-enabled variants
+
 .. autofunction:: pykal.utils.dynamics.van_der_pol_control
 .. autofunction:: pykal.utils.dynamics.duffing_control
 .. autofunction:: pykal.utils.dynamics.lotka_control
@@ -58,9 +59,9 @@ Measurement functions
 Input-signal generators
 -----------------------
 
-.. autofunction:: pykal.utils.controls.u_constant
-.. autofunction:: pykal.utils.controls.u_sinusoidal
-.. autofunction:: pykal.utils.controls.u_step
-.. autofunction:: pykal.utils.controls.u_bangbang
-.. autofunction:: pykal.utils.controls.u_ramp
-.. autofunction:: pykal.utils.controls.u_random
+.. autofunction:: pykal.utils.signals.u_constant
+.. autofunction:: pykal.utils.signals.u_sinusoidal
+.. autofunction:: pykal.utils.signals.u_step
+.. autofunction:: pykal.utils.signals.u_bangbang
+.. autofunction:: pykal.utils.signals.u_ramp
+.. autofunction:: pykal.utils.signals.u_random

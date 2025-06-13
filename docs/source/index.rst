@@ -21,7 +21,7 @@ pykal Documentation
    quickstart
    cookbook
    examples/index
-   theory
+   theory/index
    api/index
    faq
    changelog
