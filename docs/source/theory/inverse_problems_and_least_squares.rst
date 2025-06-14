@@ -39,7 +39,7 @@ This function is injective, but not surjective—resistances outside the calibra
 Yes. Let us instead define a new problem.
 
 Minimize the Residual
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 As before, let :math:`f\colon X \to Y` be a smooth function, and suppose we are given :math:`y \in Y`. We define the **residual** as
 
@@ -65,7 +65,7 @@ Our new problem is this: we wish to minimize the residiual. That is, we wish to 
 What does that mean? It means that such an :math:`\hat{x}` may not be an exact solution to Eq.~:eq:`eq:funeq`, but it is the closest we can get (quite literally, as the 2-norm is the standard Euclidean norm and is how we define distance). What’s more, if a solution to Eq.~:eq:`eq:funeq` does exist, it will also be the solution to the least-squares problem.
 
 Solving the Least-Squares Problem
----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Define a **cost** function: a scalar quantity measuring the discrepancy between the prediction :math:`f(x)` and the observation :math:`y`. A natural choice is the squared 2-norm of the residual:
 
@@ -198,3 +198,5 @@ This Grammian is positive definite if and only if :math:`A` has full column rank
 - If :math:`W` is singular: the system is **not observable**, and :math:`x^*` is **not unique**—some directions in state space are hidden to the measurements.
 
 Hence, **least-squares solutions are unique if and only if the Grammian is invertible**, which aligns precisely with the classical definition of observability in control theory.
+
+Motivating Example: Calibrating a sensor
