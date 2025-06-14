@@ -10,7 +10,7 @@ This section provides a concise yet rigorous overview of the theoretical concept
    :caption: Topics in Estimation
 
    inverse_problems_and_least_squares
-   motivating_example_sensor_calibration
+   kalman_filter
 
 
 .. admonition:: Observability Summary
