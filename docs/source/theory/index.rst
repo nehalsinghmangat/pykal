@@ -10,6 +10,7 @@ This section provides a concise yet rigorous overview of the theoretical concept
    :caption: Topics in Estimation
 
    inverse_problems_and_least_squares
+   observability
    kalman_filter
 
 
