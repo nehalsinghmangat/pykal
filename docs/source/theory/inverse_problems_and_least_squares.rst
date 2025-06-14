@@ -183,7 +183,7 @@ The matrix :math:`P_{\mathrm{Col}(A)}` is the **orthogonal projection operator**
 This projection-based view emphasizes that **least-squares fitting is not about solving :math:`Ax = y` exactly**, but rather finding the point :math:`Ax^*` in the model space that best approximates :math:`y` in the Euclidean sense.
 
 Motivating Example: Sensor Calibration
-======================================
+--------------------------------------
 
 To ground the abstract theory in a concrete engineering task, consider the **calibration** of a simple temperature sensor that outputs a voltage. We assume that, to first approximation, the relationship between true temperature :math:`T` and measured voltage :math:`y` is **linear**:
 
@@ -197,7 +197,7 @@ where:
 - :math:`\varepsilon` is a **random noise term**, modeled as a zero-mean Gaussian with variance :math:`\sigma^2`.
 
 Batch Least Squares
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 Suppose we conduct :math:`N` calibration measurements at known temperatures :math:`T_1, T_2, \dots, T_N`, and record the corresponding noisy voltages :math:`y_1, y_2, \dots, y_N`.
 
@@ -247,7 +247,7 @@ In real-time systems (e.g., embedded sensors), calibration must often be updated
 We develop these next.
 
 Sequential Leasat Squares
---------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When calibration measurements arrive one at a time (for example, streaming data from the sensor), we can update our estimate of the offset and sensitivity after each new observation rather than refitting the whole data set.
 
