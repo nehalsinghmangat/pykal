@@ -19,45 +19,42 @@ Suppose we model a sensor’s output as:
 
 .. math::
 
-y_k = b_0 + b_1 T_k + b_2 T_k^2 + \varepsilon_k,
+   y_k = b_0 + b_1 T_k + b_2 T_k^2 + \varepsilon_k,
 
-where :math:T_k is a known input (e.g., temperature), :math:y_k is a noisy measurement, and :math:\varepsilon_k \sim \mathcal{N}(0, \sigma^2).
+where :math:`T_k` is a known input (e.g., temperature), :math:`y_k` is a noisy measurement, and :math:`\varepsilon_k \sim \mathcal{N}(0, \sigma^2)`.
 
 We collect :math:N data points and write:
 
 .. math::
 
-y = A,x + \varepsilon,
+   y = A,x + \varepsilon,
 
 where:
 
 .. math::
 
-A = \begin{pmatrix}
-1 & T_1 & T_1^2 \
-1 & T_2 & T_2^2 \
-\vdots & \vdots & \vdots \
-1 & T_N & T_N^2
-\end{pmatrix},
-\quad
-x = \begin{pmatrix} b_0 \ b_1 \ b_2 \end{pmatrix},
-\quad
-y = \begin{pmatrix} y_1 \ y_2 \ \vdots \ y_N \end{pmatrix}.
+   A = \begin{pmatrix}
+   1 & T_1 & T_1^2 \
+   1 & T_2 & T_2^2 \
+   \vdots & \vdots & \vdots \
+   1 & T_N & T_N^2
+   \end{pmatrix},
+   \quad
+   x = \begin{pmatrix} b_0 \ b_1 \ b_2 \end{pmatrix},
+   \quad
+   y = \begin{pmatrix} y_1 \ y_2 \ \vdots \ y_N \end{pmatrix}.
 
 We wish to solve:
 
 .. math::
 
-x^* = \arg\min_x |A x - y|_2^2.
+   x^* = \arg\min_x |A x - y|_2^2.
 
-But is this problem well-posed?
-
-Rank and Identifiability
-If :math:A does not have full column rank, the pseudoinverse solution:
+But is this problem well-posed? If :math:A does not have full column rank, the pseudoinverse solution:
 
 .. math::
 
-x^* = A^\dagger y
+   x^* = A^\dagger y
 
 is not unique. In fact, infinitely many parameter vectors yield the same prediction. This leads to unidentifiability: some directions in parameter space are unobservable from the data.
 
@@ -69,7 +66,7 @@ The nullspace of :math:A corresponds to unobservable directions:
 
 .. math::
 
-x \in \mathrm{Null}(A) \quad\Rightarrow\quad A x = 0 \quad\Rightarrow\quad \text{no effect on } y.
+   x \in \mathrm{Null}(A) \quad\Rightarrow\quad A x = 0 \quad\Rightarrow\quad \text{no effect on } y.
 
 This means the statistical identifiability of model parameters is equivalent to the injectivity of the map :math:x \mapsto A x.
 
@@ -90,36 +87,33 @@ Consider the linear time-invariant (LTI) system:
 
 .. math::
 
-x_{k+1} &= A x_k + B u_k \
-y_k &= C x_k,
+   x_{k+1} &= A x_k + B u_k \
+   y_k &= C x_k,
 
-with state :math:x_k \in \mathbb{R}^n, control input :math:u_k \in \mathbb{R}^p, and measurements :math:y_k \in \mathbb{R}^m.
+with state :math:`x_k \in \mathbb{R}^n`, control input :math:`u_k \in \mathbb{R}^p`, and measurements :math:`y_k \in \mathbb{R}^m`.
 
 Suppose:
 
 .. math::
 
-A = \begin{pmatrix} 1 & \Delta t \ 0 & 1 \end{pmatrix},
-\quad
-C = \begin{pmatrix} 1 & 0 \end{pmatrix}.
+   A = \begin{pmatrix} 1 & \Delta t \ 0 & 1 \end{pmatrix},
+   \quad
+   C = \begin{pmatrix} 1 & 0 \end{pmatrix}.
 
 This models position-velocity dynamics with position-only output.
 
-Can we reconstruct both position and velocity?
-
-Observability Matrix
-Define the observability matrix:
+Can we reconstruct both position and velocity? Define the **observability matrix**:
 
 .. math::
 
-\mathcal{O} = \begin{pmatrix}
-C \
-C A \
-C A^2 \
-\vdots \
-C A^{n-1}
-\end{pmatrix}
-\in \mathbb{R}^{n m \times n}.
+   \mathcal{O} = \begin{pmatrix}
+   C \
+   C A \
+   C A^2 \
+   \vdots \
+   C A^{n-1}
+   \end{pmatrix}
+   \in \mathbb{R}^{n m \times n}.
 
 The system is observable if and only if :math:\mathrm{rank}(\mathcal{O}) = n.
 
@@ -127,27 +121,24 @@ In our example:
 
 .. math::
 
-C = \begin{pmatrix} 1 & 0 \end{pmatrix},
-\quad
-C A = \begin{pmatrix} 1 & \Delta t \end{pmatrix},
+   C = \begin{pmatrix} 1 & 0 \end{pmatrix},
+   \quad
+   C A = \begin{pmatrix} 1 & \Delta t \end{pmatrix},
 
 so:
 
 .. math::
 
-\mathcal{O} = \begin{pmatrix}
-1 & 0 \
-1 & \Delta t
-\end{pmatrix}.
+   \mathcal{O} = \begin{pmatrix}
+   1 & 0 \
+   1 & \Delta t
+   \end{pmatrix}.
 
-This has full rank iff :math:\Delta t \ne 0, implying that both position and velocity can be recovered from measurements over time. Even though velocity is never directly measured, it is observable through the dynamics.
+This has full rank iff :math:`\Delta t \ne 0`, implying that both position and velocity can be recovered from measurements over time. Even though velocity is never directly measured, it is observable through the dynamics. Observability ensures that the internal state can be inferred from inputs and outputs. Formally:
 
-Connection to System Theory
-Observability ensures that the internal state can be inferred from inputs and outputs. Formally:
+A system is observable if, for any initial state :math:`x_0`, knowledge of :math:`\{y_k, u_k\}` for :math:`k = 0,\dots,n-1` suffices to determine :math:`x_0`.
 
-A system is observable if, for any initial state :math:x_0, knowledge of :math:\{y_k, u_k\} for :math:k = 0,\dots,n-1 suffices to determine :math:x_0.
-
-This is a structural property of the matrices :math:(A, C) and is independent of noise or estimation method.
+This is a structural property of the matrices :math:`(A, C)` and is independent of noise or estimation method.
 
 Observability Matrix
 --------------------
@@ -159,63 +150,33 @@ For discrete-time linear systems:
 
 .. math::
 
-x_{k+1} = A x_k, \quad y_k = C x_k,
+   x_{k+1} = A x_k, \quad y_k = C x_k,
 
 the state is observable iff the observability matrix
 
 .. math::
 
-\mathcal{O} =
-\begin{pmatrix}
-C \ CA \ CA^2 \ \vdots \ CA^{n-1}
-\end{pmatrix}
-\in \mathbb{R}^{n \times n}
+   \mathcal{O} =
+   \begin{pmatrix}
+   C \ CA \ CA^2 \ \vdots \ CA^{n-1}
+   \end{pmatrix}
+   \in \mathbb{R}^{n \times n}
 
-has full rank.
-
-This tests whether each direction in 
-𝑥
-x affects the sequence of outputs over time.
-
-Continuous-Time: The Observability Gramian
-In the continuous-time linear case:
+has full rank. In the continuous-time linear case:
 
 .. math::
 
-\dot{x}(t) = A x(t), \quad y(t) = C x(t),
+   \dot{x}(t) = A x(t), \quad y(t) = C x(t),
 
-the system is observable over 
-[
-𝑡
-0
-,
-𝑡
-1
-]
-[t 
-0
-​
-,t 
-1
-​
-] iff the observability Gramian
+the system is observable over :math:`[t_0,t_1]` iff the **observability Gramian**
 
 .. math::
 
-W_o(t_0, t_1) = \int_{t_0}^{t_1} e^{A^\top (t - t_0)} C^\top C, e^{A (t - t_0)} dt
+   W_o(t_0, t_1) = \int_{t_0}^{t_1} e^{A^\top (t - t_0)} C^\top C, e^{A (t - t_0)} dt
 
 is positive definite.
 
-Then, the energy of the output over time reveals the initial condition 
-𝑥
-(
-𝑡
-0
-)
-x(t 
-0
-​
-).
+Then, the energy of the output over time reveals the initial condition :math:`x(t_0)`
 
 Nonlinear Systems
 ^^^^^^^^^^^^^^^^^
@@ -224,29 +185,23 @@ For a general nonlinear system:
 
 .. math::
 
-\dot{x} = f(x),\quad y = h(x),
+   \dot{x} = f(x),\quad y = h(x),
 
 define the Lie derivatives:
 
 .. math::
 
-L_f h(x) = \frac{d}{dt} h(x(t)) = \nabla h(x)\cdot f(x),
-\quad
-L_f^2 h(x) = \nabla (L_f h(x))\cdot f(x), \dots
+   L_f h(x) = \frac{d}{dt} h(x(t)) = \nabla h(x)\cdot f(x),
+   \quad
+   L_f^2 h(x) = \nabla (L_f h(x))\cdot f(x), \dots
 
 Build the observability codistribution:
 
 .. math::
 
-\mathcal{O}(x) = \operatorname{span} \bigg{ dh(x),; dL_f h(x),; dL_f^2 h(x),; \dots \bigg}.
+   \mathcal{O}(x) = \operatorname{span} \bigg{ dh(x),; dL_f h(x),; dL_f^2 h(x),; \dots \bigg}.
 
-Then the system is locally observable near 
-𝑥
-x iff
-
-.. math::
-
-\operatorname{rank} \mathcal{O}(x) = n.
+Then the system is locally observable near :math:`x` iff :math:`\operatorname{rank} \mathcal{O}(x) = n`.
 
 This is the nonlinear analog of the linear observability matrix: it tests whether the output and its time derivatives carry enough information to reconstruct the full state.
 
