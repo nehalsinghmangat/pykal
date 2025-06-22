@@ -903,6 +903,7 @@ class EKFIO(SystemIO):
         @wraps(func)
         def wrapper(
             self,
+            *,
             x0: NDArray,
             P0: NDArray,
             Y: NDArray,
@@ -910,8 +911,7 @@ class EKFIO(SystemIO):
             H: Callable,
             start_time: float,
             dt: float,
-            U: Callable,
-            *args,
+            u: Callable,
             **kwargs,
         ):
 
@@ -932,8 +932,8 @@ class EKFIO(SystemIO):
                 raise TypeError("F must be a callable function")
             if not callable(H):
                 raise TypeError("H must be a callable function")
-            if not callable(U):
-                raise TypeError("U must be a callable function")
+            if not callable(u):
+                raise TypeError("u must be a callable function")
 
             if not isinstance(start_time, (int, float)):
                 raise TypeError("start_time must be a float")
@@ -942,15 +942,14 @@ class EKFIO(SystemIO):
 
             return func(
                 self,
-                x0,
-                P0,
-                Y,
-                F,
-                H,
-                start_time,
-                dt,
-                U,
-                *args,
+                x0=x0,
+                P0=P0,
+                Y=Y,
+                F=F,
+                H=H,
+                start_time=start_time,
+                dt=dt,
+                u=u,
                 **kwargs,
             )
 
