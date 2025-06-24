@@ -9,7 +9,8 @@ from typing import (
     get_args,
     Union,
 )
-import inspect 
+import inspect
+
 
 class VariableAliases:
     """
@@ -20,7 +21,7 @@ class VariableAliases:
     _alias_for_u = {"u", "u_k", "input"}
     _alias_for_t = {"t", "t_k", "time", "tau"}
 
-    
+
 class SafeIO(VariableAliases):
     """
     Validated interface for system function registration and safe function dispatch.
@@ -50,7 +51,6 @@ class SafeIO(VariableAliases):
     system dynamics (`f`), measurement models (`h`), and noise covariances (`Q`, `R`) in
     state estimation pipelines.
     """
-
 
     @classmethod
     def _is_ndarray_hint(cls, hint) -> bool:
@@ -276,7 +276,7 @@ class SafeIO(VariableAliases):
 
         >>> import numpy as np
         >>> from numpy.typing import NDArray
-        >>> from pykal.utils.iosafety import SafeIO
+        >>> from pykal.utils.utils_safeio import SafeIO
 
         >>> x = np.array([[1.0], [2.0]])
         >>> u = np.array([[0.5]])
@@ -358,8 +358,3 @@ class SafeIO(VariableAliases):
                 )
 
         return result
-
-
-
-
-

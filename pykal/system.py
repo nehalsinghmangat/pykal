@@ -1,8 +1,490 @@
+from functools import wraps
 import numpy as np
 from numpy.typing import NDArray
 from scipy.integrate import solve_ivp
-from typing import Callable, Optional, List, Union
-from utils.iosafety import SystemIO as ios, SafeIO as safeio, SystemType
+from typing import Callable, Optional, List, Union, Sequence
+from utils.utils_safeio import SafeIO as safeio
+from enum import Enum, auto
+
+
+class SystemType(Enum):
+    r"""
+    Enumeration of timing assumptions for plant / measurement models.
+
+    Members
+    -------
+    CONTINUOUS_TIME_INVARIANT
+        .. math::
+           \dot x = f(x, u)
+        (no explicit time argument)
+
+    CONTINUOUS_TIME_VARYING
+        .. math::
+           \dot x = f(x, u, t)
+
+    DISCRETE_TIME_INVARIANT
+        .. math::
+           x_{k+1} = f(x_k, u_k)
+
+    DISCRETE_TIME_VARYING
+        .. math::
+           x_{k+1} = f(x_k, u_k, t_k)
+
+    This enum exists purely for type-safety and clarity when specifying
+    your system's timing assumptions.
+    """
+
+    CONTINUOUS_TIME_INVARIANT = auto()
+    CONTINUOUS_TIME_VARYING = auto()
+    DISCRETE_TIME_INVARIANT = auto()
+    DISCRETE_TIME_VARYING = auto()
+
+
+class SystemIO:
+    """
+    Interface for registering validated components of a dynamical system model.
+
+    `SystemIO` extends `SafeIO` to support structured registration and validation of
+    user-defined system functions, including dynamics (`f`), measurements (`h`),
+    noise models (`Q`, `R`), and naming conventions for states, inputs, and outputs.
+
+    All registered functions are validated with strict rules:
+      • Parameter names must match known aliases (`x`, `u`, `t`, etc.)
+      • All parameters and return types must be type-annotated
+      • Return type must be `NDArray[...]`
+
+    Additionally, default functions are provided when `Q`, `R`, or `u` are unspecified.
+
+    Inherits
+    --------
+    SafeIO
+        Provides core signature validation, alias checking, argument injection,
+        and shape enforcement utilities.
+
+    Methods
+    -------
+    set_f(f: Callable) -> Callable
+        Register system dynamics function `f(x, u, t)` with validation.
+    set_h(h: Callable) -> Callable
+        Register measurement function `h(x, u, t)` with validation.
+    set_u(u: Optional[Callable]) -> Callable
+        Register or default control input function `u(t)`.
+    set_Q(Q: Callable | None, state_names: Sequence[str]) -> Callable
+        Register or default process noise covariance `Q(x, u, t)`.
+    set_R(R: Callable | None, measurement_names: Sequence[str]) -> Callable
+        Register or default measurement noise covariance `R(x, u, t)`.
+    set_state_names(names: Sequence[str]) -> Sequence[str]
+        Register list of state variable names (with order).
+    set_measurement_names(names: Sequence[str]) -> Sequence[str]
+        Register list of measurement variable names (with order).
+    set_input_names(names: Sequence[str] | None) -> Sequence[str] | None
+        Register list of input names or return `None`.
+    set_system_type(system_type: SystemType | None) -> SystemType
+        Register or default to a `SystemType` enum member.
+
+    Notes
+    -----
+    - Signature and type validation for all function registrations is handled by
+      the `@verify_signature_and_parameter_names` decorator.
+    - All string-name setters (e.g., for states or measurements) are checked
+      with `@verify_ordered_string_sequence` for consistency and ordering.
+    - Enum validation for `SystemType` uses `@verify_system_type`.
+
+    Examples
+    --------
+    >>> def f(x: NDArray, u: NDArray, t: float) -> NDArray:
+    ...     return x + u
+    >>> SystemIO.set_f(f)
+    <function f at ...>
+
+    >>> SystemIO.set_state_names(["x1", "x2"])
+    ['x1', 'x2']
+
+    >>> def Q(x: NDArray, u: NDArray, t: float) -> NDArray:
+    ...     return np.eye(len(x))
+    >>> SystemIO.set_Q(Q, state_names=["x1", "x2"])
+    <function Q at ...>
+    """
+
+    @staticmethod
+    def verify_system_type(func: Callable) -> Callable:
+        """
+        Decorator to validate that the first argument is a valid SystemType enum member.
+
+        Raises
+        ------
+        TypeError
+            If the first argument is not a valid SystemType.
+        """
+
+        @wraps(func)
+        def wrapper(system_type, *args, **kwargs):
+            if not isinstance(system_type, SystemType):
+                raise TypeError(
+                    f"Expected SystemType, got {type(system_type).__name__}"
+                )
+            return func(system_type, *args, **kwargs)
+
+        return wrapper
+
+    @staticmethod
+    def verify_ordered_string_sequence(param_name: str) -> Callable:
+        """
+        Decorator to ensure the first argument is a list or tuple of strings.
+
+        Parameters
+        ----------
+        param_name : str
+            Name used in error messages to indicate what is being validated.
+
+        Returns
+        -------
+        Callable
+            A decorator that validates the first argument of the decorated function.
+        """
+
+        def decorator(func: Callable) -> Callable:
+            @wraps(func)
+            def wrapper(names: Union[list, tuple], *args, **kwargs):
+                if not isinstance(names, (list, tuple)):
+                    raise TypeError(
+                        f"{param_name} must be a list or tuple, got {type(names).__name__}"
+                    )
+                if not all(isinstance(v, str) for v in names):
+                    raise TypeError(f"All elements in {param_name} must be strings")
+                return func(names, *args, **kwargs)
+
+            return wrapper
+
+        return decorator
+
+    @safeio.verify_signature_and_parameter_names
+    @staticmethod
+    def set_f(f: Optional[Callable]) -> Callable:
+        """
+        Set the system dynamics function after validating its signature.
+
+        The function must return an NDArray and accept a subset of known alias names
+        for state (`x`), input (`u`), and time (`t`).
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from numpy.typing import NDArray
+
+
+
+        # ✅ VALID: (x, u, t) -> NDArray
+        >>> def good_f(x: NDArray, u: NDArray, t: float) -> NDArray:
+        ...     return x + u
+        >>> SystemIO.set_f(good_f)
+        <function good_f...
+
+        # ✅ VALID: no arguments, returns NDArray
+        >>> def f_no_args() -> NDArray:
+        ...     return np.zeros((2, 1))
+        >>> SystemIO.set_f(f_no_args)
+        <function f_no_args...
+
+        # ✅ VALID: different argument order, different aliases (tk, state, uk)
+        >>> def f_ordered(t: float, x: NDArray, u: NDArray) -> NDArray:
+        ...     return x + u
+        >>> SystemIO.set_f(f_ordered)
+        <function f_ordered...
+
+        # ✅ VALID: subset of arguments (t, x)
+        >>> def f_partial(t: float, x: NDArray) -> NDArray:
+        ...     return x * 2
+        >>> SystemIO.set_f(f_partial)
+        <function f_partial...
+
+        # ✅ VALID: single time argument using alias `tau`
+        >>> def f_timeonly(tau: float) -> NDArray:
+        ...     return np.ones((3, 1))
+        >>> SystemIO.set_f(f_timeonly)
+        <function f_timeonly...
+
+        # INVALID: None
+        >>> SystemIO.set_f(None)
+        Traceback (most recent call last):
+        ...
+        TypeError: The system function f cannot be None
+
+        # ❌ UNRECOGNIZED PARAMETER NAME
+        >>> def bad_f1(z: NDArray) -> NDArray:
+        ...     return z
+        >>> SystemIO.set_f(bad_f1)
+        Traceback (most recent call last):
+        ...
+        TypeError: In function `bad_f1`, parameter `z` is not a recognized alias.
+        Expected one of: ['input', 'state', 't', 't_k', 'tau', 'time', 'u', 'u_k', 'x', 'x_k']
+
+        # ❌ MISSING TYPE ANNOTATION
+        >>> def bad_f2(x) -> NDArray:
+        ...     return x
+        >>> SystemIO.set_f(bad_f2)
+        Traceback (most recent call last):
+        ...
+        TypeError: In function `bad_f2`, input `x` is missing a type annotation.
+
+        # ❌ WRONG TYPE FOR x
+        >>> def bad_f3(x: float) -> NDArray:
+        ...     return np.array([[x]])
+        >>> SystemIO.set_f(bad_f3)
+        Traceback (most recent call last):
+        ...
+        TypeError: In function `bad_f3`, input `x` must be NDArray[...] or Optional[NDArray], got <class 'float'>
+
+        # ❌ WRONG TYPE FOR t
+        >>> def bad_f4(x: NDArray, u: NDArray, t: NDArray) -> NDArray:
+        ...     return x + u
+        >>> SystemIO.set_f(bad_f4)
+        Traceback (most recent call last):
+        ...
+        TypeError: In function `bad_f4`, input `t` must be float or Optional[float], got numpy.ndarray[tuple[typing.Any, ...], numpy.dtype[~_ScalarT]]
+
+        # ❌ MISSING RETURN ANNOTATION
+        >>> def bad_f5(x: NDArray):
+        ...     return x
+        >>> SystemIO.set_f(bad_f5)
+        Traceback (most recent call last):
+        ...
+        TypeError: In function `bad_f5`, missing return type annotation. Expected NDArray[...]
+
+        # ❌ RETURN TYPE IS NOT NDArray
+        >>> def bad_f6(x: NDArray) -> float:
+        ...     return 1.0
+        >>> SystemIO.set_f(bad_f6)
+        Traceback (most recent call last):
+        ...
+        TypeError: In function `bad_f6`, return type must be NDArray[...], got <class 'float'>
+
+        """
+
+        if f is None:
+            raise TypeError("The system function f cannot be None")
+        return f
+
+    @safeio.verify_signature_and_parameter_names
+    @staticmethod
+    def set_h(h: Optional[Callable]) -> Callable:
+        """
+        Set the system measurement function after validating its signature.
+
+        This method performs the same validation as `set_f`, ensuring that the
+        user-supplied function `h` has allowed argument names (like x, u, t) and
+        correct type annotations, and that its return type is NDArray.
+
+        See Also
+        --------
+        set_f : Valid usage examples and decorator-based validation rules.
+        """
+        if h is None:
+            raise TypeError("The measurement function h cannot be None")
+        return h
+
+    @safeio.verify_signature_and_parameter_names
+    @staticmethod
+    def set_u(u: Optional[Callable]) -> Callable:
+        """
+        Set the system input function after validating its signature.
+
+        If `u` is None, this sets a default function that returns a zero input vector
+        of shape (1, 1) for any time `t`. Otherwise, the callable is returned unchanged
+        (but validated via decorator).
+
+        Examples
+        --------
+        >>> u = SystemIO.set_u(None)
+        >>> u(0.0)
+        array([[0.]])
+
+        See Also
+        --------
+        set_f : Full examples of valid and invalid signatures.
+        set_h : Measurement function validation, using the same decorator.
+        """
+        if u is None:
+
+            def default_u(t: NDArray) -> NDArray:
+                return np.zeros((1, 1))
+
+            return default_u
+        else:
+            return u
+
+    @staticmethod
+    def set_Q(Q: Union[Callable, bool, None], state_names: Sequence[str]) -> Callable:
+        """
+        Set the process noise covariance function `Q(x, u, t)`.
+
+        This registers a user-defined function for computing the process noise
+        covariance matrix. The function must return an `NDArray` of shape `(n, n)`,
+        where `n = len(state_names)`.
+
+        If `Q` is:
+        - `None`: returns a default function that returns the zero matrix.
+        - Callable: validates its signature and return type against standard system
+          function rules (via `verify_signature_and_parameter_names`).
+
+        Parameters
+        ----------
+        Q : Callable or None
+            User-defined function of the form `Q(x, u, t) -> NDArray`, or `None`
+            to default to a zero matrix.
+        state_names : Sequence[str]
+            List of state variable names used to determine the size of the default matrix.
+
+        Returns
+        -------
+        Callable
+            A validated (or default) covariance function.
+
+        Examples
+        --------
+        >>> def valid_Q(x: NDArray, u: NDArray, t: float) -> NDArray:
+        ...     return np.eye(len(x))
+
+        >>> Q_checked = SystemIO.set_Q(valid_Q, state_names=["x1", "x2"])
+        >>> Q_checked(np.zeros((2, 1)), np.zeros((2, 1)), 0.0)
+        array([[1., 0.],
+               [0., 1.]])
+
+        >>> Q_default = SystemIO.set_Q(None, state_names=["x1", "x2", "x3"])
+        >>> Q_default(np.zeros((3, 1)), np.zeros((3, 1)), 0.0)
+        array([[0., 0., 0.],
+               [0., 0., 0.],
+               [0., 0., 0.]])
+
+        See Also
+        --------
+        set_f : Registers the system dynamics model.
+        set_h : Registers the measurement function.
+        set_u : Registers the control input function.
+        """
+        if Q is None:
+
+            def default_Q(x: NDArray, u: NDArray, t: float) -> NDArray:
+                return np.zeros((len(state_names), len(state_names)))
+
+            return default_Q
+        else:
+
+            @safeio.verify_signature_and_parameter_names
+            def verify_Q(Q: Callable) -> Callable:
+                return Q
+
+            return verify_Q(Q)
+
+    @staticmethod
+    def set_R(
+        R: Union[Callable, bool, None], measurement_names: Sequence[str]
+    ) -> Callable:
+        """
+        Set the measurement noise covariance function `R(x, u, t)`.
+
+        This registers a user-defined function that computes the measurement noise
+        covariance matrix. The function must return an `NDArray` of shape `(m, m)`,
+        where `m = len(measurement_names)`.
+
+        If `R` is:
+        - `None`: returns a default function that returns a zero matrix of shape (m, m)
+        - Callable: validated for signature and return type using the same rules as
+          `set_f`, `set_h`, and `set_Q` via `@verify_signature_and_parameter_names`.
+
+        Parameters
+        ----------
+        R : Callable or None
+            A user-defined function of the form `R(x, u, t) -> NDArray`, or `None` to
+            return a default zero matrix.
+        measurement_names : Sequence[str]
+            List of measurement names used to determine matrix shape.
+
+        Returns
+        -------
+        Callable
+            A validated (or default) covariance function.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from numpy.typing import NDArray
+
+        >>> def valid_R(x: NDArray, u: NDArray, t: float) -> NDArray:
+        ...     return 0.1 * np.eye(len(x))
+
+        >>> R_checked = SystemIO.set_R(valid_R, measurement_names=["y1", "y2"])
+        >>> R_checked(np.zeros((2, 1)), np.zeros((2, 1)), 0.0)
+        array([[0.1, 0. ],
+               [0. , 0.1]])
+
+        >>> R_default = SystemIO.set_R(None, measurement_names=["y1", "y2", "y3"])
+        >>> R_default(np.zeros((3, 1)), np.zeros((3, 1)), 0.0)
+        array([[0., 0., 0.],
+               [0., 0., 0.],
+               [0., 0., 0.]])
+
+        See Also
+        --------
+        set_f : Register the system dynamics function.
+        set_h : Register the measurement function.
+        set_u : Register the control input function.
+        set_Q : Register the process noise covariance function.
+        """
+
+        if R is None:
+
+            def default_R(x: NDArray, u: NDArray, t: float) -> NDArray:
+                return np.zeros((len(measurement_names), len(measurement_names)))
+
+            return default_R
+
+        @safeio.verify_signature_and_parameter_names
+        def verified_R(R_fn: Callable) -> Callable:
+            return R_fn
+
+        return verified_R(R)
+
+    @staticmethod
+    @verify_ordered_string_sequence("state_names")
+    def set_state_names(
+        names: Union[list[str], tuple[str, ...]],
+    ) -> Union[list[str], tuple[str, ...]]:
+        return names
+
+    @staticmethod
+    @verify_ordered_string_sequence("measurement_names")
+    def set_measurement_names(
+        names: Union[list[str], tuple[str, ...]],
+    ) -> Union[list[str], tuple[str, ...]]:
+        return names
+
+    @staticmethod
+    def set_input_names(
+        names: Optional[Union[list[str], tuple[str, ...]]],
+    ) -> Union[list[str], tuple[str, ...]]:
+        if names is None:
+            return ["zero_input"]
+
+        @SystemIO.verify_ordered_string_sequence("input_names")
+        def check_input_names(
+            names_: Union[list[str], tuple[str, ...]],
+        ) -> Union[list[str], tuple[str, ...]]:
+            return names_
+
+        return check_input_names(names)
+
+    @staticmethod
+    def set_system_type(system_type: Optional[SystemType]):
+        if system_type is None:
+            return SystemType.CONTINUOUS_TIME_INVARIANT
+        else:
+
+            @SystemIO.verify_system_type
+            def check_system_type(system_type):
+                return system_type
+
+        return check_system_type(system_type)
 
 
 class System:
@@ -18,7 +500,7 @@ class System:
     - Dynamical function `f(x, u, t)` and measurement model `h(x, u, t)`
     - Input function `u(t)`, and optional process/measurement noise models `Q(x, u, t)`, `R(x, u, t)`
     - Explicit time structure via `SystemType` enum
-    - Full static validation of function signatures and shapes via `SystemIO` and `SafeIO`
+    - Full static validation of function signatures and shapes via `SystemIO` and `safeio`
     - Robust simulation methods for state and measurement trajectories with support for noise injection
     - Override mechanisms for dynamic substitution of model components
 
@@ -85,7 +567,7 @@ class System:
     --------
     SystemType : Enum of timing structures.
     SystemIO : Static validation utilities for setting functions and names.
-    SafeIO : Core function signature/type enforcement logic.
+    safeio : Core function signature/type enforcement logic.
     EKFIO : Input checker class for Kalman filter applications.
     """
 
@@ -103,15 +585,15 @@ class System:
         input_names: Optional[List[str]] = None,
     ) -> None:
 
-        self._f = ios.set_f(f)
-        self._h = ios.set_h(h)
-        self._u = ios.set_u(u)
-        self._Q = ios.set_Q(Q, state_names)
-        self._R = ios.set_R(R, measurement_names)
-        self._state_names = ios.set_state_names(state_names)
-        self._measurement_names = ios.set_measurement_names(measurement_names)
-        self._input_names = ios.set_input_names(input_names)
-        self._system_type = ios.set_system_type(system_type)
+        self._f = SystemIO.set_f(f)
+        self._h = SystemIO.set_h(h)
+        self._u = SystemIO.set_u(u)
+        self._Q = SystemIO.set_Q(Q, state_names)
+        self._R = SystemIO.set_R(R, measurement_names)
+        self._state_names = SystemIO.set_state_names(state_names)
+        self._measurement_names = SystemIO.set_measurement_names(measurement_names)
+        self._input_names = SystemIO.set_input_names(input_names)
+        self._system_type = SystemIO.set_system_type(system_type)
 
     @property
     def f(self):
@@ -119,7 +601,7 @@ class System:
 
     @f.setter
     def f(self, func):
-        self._f = ios.set_f(func)
+        self._f = SystemIO.set_f(func)
 
     @property
     def h(self):
@@ -127,7 +609,7 @@ class System:
 
     @h.setter
     def h(self, func):
-        self._h = ios.set_h(func)
+        self._h = SystemIO.set_h(func)
 
     @property
     def Q(self):
@@ -135,7 +617,7 @@ class System:
 
     @Q.setter
     def Q(self, func):
-        self._Q = ios.set_Q(func, self._state_names)
+        self._Q = SystemIO.set_Q(func, self._state_names)
 
     @property
     def R(self):
@@ -143,7 +625,7 @@ class System:
 
     @R.setter
     def R(self, func):
-        self._R = ios.set_R(func, self._measurement_names)
+        self._R = SystemIO.set_R(func, self._measurement_names)
 
     @property
     def u(self):
@@ -151,7 +633,7 @@ class System:
 
     @u.setter
     def u(self, func):
-        self._u = ios.set_u(func)
+        self._u = SystemIO.set_u(func)
 
     @property
     def state_names(self):
@@ -159,7 +641,7 @@ class System:
 
     @state_names.setter
     def state_names(self, names):
-        self._state_names = ios.set_state_names(names)
+        self._state_names = SystemIO.set_state_names(names)
 
     @property
     def measurement_names(self):
@@ -167,7 +649,7 @@ class System:
 
     @measurement_names.setter
     def measurement_names(self, names):
-        self._measurement_names = ios.set_measurement_names(names)
+        self._measurement_names = SystemIO.set_measurement_names(names)
 
     @property
     def input_names(self):
@@ -175,7 +657,7 @@ class System:
 
     @input_names.setter
     def input_names(self, names):
-        self._input_names = ios.set_input_names(names)
+        self._input_names = SystemIO.set_input_names(names)
 
     @property
     def system_type(self):
@@ -183,7 +665,7 @@ class System:
 
     @system_type.setter
     def system_type(self, val):
-        self._system_type = ios.set_system_type(val)
+        self._system_type = SystemIO.set_system_type(val)
 
     @staticmethod
     def _simulate_states_continuous(
@@ -204,7 +686,7 @@ class System:
         Gaussian process noise from `Q(x, u, t)` at each timestep.
 
         All input functions must conform to the statically validated signatures enforced
-        via `SafeIO.call_validated_function_with_args`, ensuring correct shape, typing,
+        via `safeio.call_validated_function_with_args`, ensuring correct shape, typing,
         and parameter names.
 
         Parameters
@@ -239,14 +721,14 @@ class System:
           for correct matrix operations and validation.
         - Noise is injected *after* deterministic integration, as additive perturbations
           at each timepoint.
-        - All function calls (`f`, `u`, `Q`) are dispatched using `SafeIO.call_validated_function_with_args`
+        - All function calls (`f`, `u`, `Q`) are dispatched using `safeio.call_validated_function_with_args`
           to enforce safety and suppress silent failure from malformed input functions.
 
         See Also
         --------
         simulate_states : High-level unified simulation method.
         SystemType : Enum that distinguishes continuous from discrete systems.
-        SafeIO.call_validated_function_with_args : Strict dispatch utility.
+        safeio.call_validated_function_with_args : Strict dispatch utility.
         """
 
         def wrapped_f(t_k: float, x_flat: NDArray) -> NDArray:
@@ -298,7 +780,7 @@ class System:
           3. Optionally injects additive Gaussian noise using `Q(x, u, t)`
 
         All functional inputs are statically validated using
-        `SafeIO.call_validated_function_with_args` to ensure safe dispatch and
+        `safeio.call_validated_function_with_args` to ensure safe dispatch and
         suppress silent shape/type failures.
 
         Parameters
@@ -339,7 +821,7 @@ class System:
         --------
         simulate_states : High-level unified simulation interface.
         SystemType : Enum of discrete vs. continuous system types.
-        SafeIO.call_validated_function_with_args : Strict functional call utility.
+        safeio.call_validated_function_with_args : Strict functional call utility.
         """
 
         n = x0.shape[0]
@@ -386,7 +868,7 @@ class System:
         allow experimentation with alternate dynamics, inputs, and noise models at runtime.
 
         All inputs are validated for shape, type, and dimension safety. Simulation
-        functions are dispatched through `SafeIO.call_validated_function_with_args`
+        functions are dispatched through `safeio.call_validated_function_with_args`
         to ensure that type and argument mismatches are caught early.
 
         Parameters
@@ -504,12 +986,12 @@ class System:
         if not isinstance(process_noise, bool):
             raise TypeError("process_noise must be a boolean.")
 
-        f = self._f if override_system_f is False else ios.set_f(override_system_f)
-        u = self._u if override_system_u is False else ios.set_u(override_system_u)
+        f = self._f if override_system_f is False else SystemIO.set_f(override_system_f)
+        u = self._u if override_system_u is False else SystemIO.set_u(override_system_u)
         Q = (
             self._Q
             if override_system_Q is False
-            else ios.set_Q(override_system_Q, self.state_names)
+            else SystemIO.set_Q(override_system_Q, self.state_names)
         )
 
         if self.system_type in {
@@ -564,7 +1046,7 @@ class System:
 
         For each time step, this function evaluates the measurement model `h(x, u, t)`
         and optionally injects Gaussian measurement noise drawn from `R(x, u, t)`.
-        All functions are validated and dispatched through `SafeIO` to ensure correctness
+        All functions are validated and dispatched through `safeio` to ensure correctness
         and early failure for shape/type mismatches.
 
         Parameters
@@ -662,13 +1144,13 @@ class System:
         if X.shape[1] != T.shape[0]:
             raise ValueError("X and T must have the same number of time steps.")
 
-        h = self._h if override_system_h is False else ios.set_h(override_system_h)
+        h = self._h if override_system_h is False else SystemIO.set_h(override_system_h)
         R = (
             self._R
             if override_system_R is False
-            else ios.set_R(override_system_R, self.measurement_names)
+            else SystemIO.set_R(override_system_R, self.measurement_names)
         )
-        u = self._u if override_system_u is False else ios.set_u(override_system_u)
+        u = self._u if override_system_u is False else SystemIO.set_u(override_system_u)
 
         Y = []
 
