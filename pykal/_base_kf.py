@@ -113,12 +113,12 @@ class BaseKF(ABC):
         x0: NDArray,
         P0: NDArray,
         Y: NDArray,
-        F: Callable,
-        H: Callable,
         start_time: float,
         dt: float,
-        square_root: bool,
-        override_beta: Optional[Callable],
+        square_root: bool = False,
+        override_system_F: Union[Callable, None, bool] = False,
+        override_system_H: Union[Callable, None, bool] = False,
+        override_system_beta: Union[Callable, None, bool] = False,
     ) -> tuple[NDArray, NDArray, NDArray]:
         """
         Run the full filter over a measurement sequence `Y`.

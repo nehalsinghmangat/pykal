@@ -1,5 +1,5 @@
 from functools import wraps
-from system import System
+from system import System, SystemIO
 from _base_kf import BaseKFSqrt, BaseKFPartialUpdate
 import numpy as np
 from numpy.typing import NDArray
@@ -51,12 +51,12 @@ class EKFIO:
             x0: NDArray,
             P0: NDArray,
             Y: NDArray,
-            F: Callable,
-            H: Callable,
             start_time: float,
             dt: float,
-            square_root: bool,
-            override_beta: Optional[Callable],
+            square_root: bool = False,
+            override_system_F: Union[Callable, None, bool] = False,
+            override_system_H: Union[Callable, None, bool] = False,
+            override_system_beta: Union[Callable, None, bool] = False,
             **kwargs,
         ):
             if not isinstance(Y, np.ndarray) or Y.ndim != 2:
@@ -71,11 +71,6 @@ class EKFIO:
                     "Measurement history `Y` must contain at least one column"
                 )
 
-            if not callable(F):
-                raise TypeError("F must be a callable function")
-            if not callable(H):
-                raise TypeError("H must be a callable function")
-
             if not isinstance(start_time, (int, float)):
                 raise TypeError("start_time must be a float or int")
             if not isinstance(dt, (int, float)):
@@ -83,21 +78,18 @@ class EKFIO:
 
             if not isinstance(square_root, bool):
                 raise TypeError("square_root must be a boolean flag")
-            if override_beta not in (None, False):
-                if not isinstance(override_beta, Callable):
-                    raise TypeError("override_beta must be a callable")
 
             return func(
                 self,
                 x0=x0,
                 P0=P0,
                 Y=Y,
-                F=F,
-                H=H,
                 start_time=start_time,
                 dt=dt,
                 square_root=square_root,
-                override_beta=override_beta,
+                override_system_F=override_system_F,
+                override_system_H=override_system_H,
+                override_system_beta=override_system_beta,
                 **kwargs,
             )
 
@@ -199,6 +191,8 @@ class EKF(BaseKFSqrt, BaseKFPartialUpdate):
     ...     state_names=["x0", "x1"],
     ...     measurement_names=["x0"],
     ...     system_type=SystemType.DISCRETE_TIME_INVARIANT,
+    ...     H = H,
+    ...     F = F
     ... )
 
     # Initial condition
@@ -214,11 +208,10 @@ class EKF(BaseKFSqrt, BaseKFPartialUpdate):
     >>> ekf = EKF(sys)  # no beta passed → defaults to β = 1 for all states
     >>> X_est, P_est, T_out = ekf.run(
     ...     x0=x0, P0=P0, Y=Y.T,
-    ...     F=F, H=H,
     ...     start_time=0.0,
     ...     dt=0.1,
     ...     square_root=False,
-    ...     override_beta=False)
+    ...     override_system_beta=False)
 
 
     >>> X_est.shape == (Y.shape[1] + 1, x0.shape[0])
@@ -231,11 +224,10 @@ class EKF(BaseKFSqrt, BaseKFPartialUpdate):
     # === Compare standard EKF and square-root EKF ===
     >>> X_sqrt, P_sqrt, _ = ekf.run(
     ...     x0=x0, P0=P0, Y=Y.T,
-    ...     F=F, H=H,
     ...     start_time=0.0,
     ...     dt=0.1,
     ...     square_root=True,
-    ...     override_beta=False
+    ...     override_system_beta=False
     ... )
 
     >>> np.allclose(X_est, X_sqrt, atol=1e-5)
@@ -253,11 +245,10 @@ class EKF(BaseKFSqrt, BaseKFPartialUpdate):
 
     >>> X_est, P_est, T_out = ekf.run(
     ...     x0=x0, P0=P0, Y=Y.T,
-    ...     F=F, H=H,
     ...     start_time=0.0,
     ...     dt=0.1,
     ...     square_root = False,
-    ...     override_beta = False)
+    ...     override_system_beta = False)
 
     >>> X_est.shape == (Y.shape[1] + 1, 2)
     True
@@ -272,11 +263,10 @@ class EKF(BaseKFSqrt, BaseKFPartialUpdate):
 
     >>> X_est, P_est, T_out = ekf.run(
     ...     x0=x0, P0=P0, Y=Y.T,
-    ...     F=F, H=H,
     ...     start_time=0.0,
     ...     dt=0.1,
     ...     square_root = False,
-    ...     override_beta = beta)
+    ...     override_system_beta = beta)
 
     >>> X_est.shape == (Y.shape[1] + 1, 2)
     True
@@ -508,12 +498,12 @@ class EKF(BaseKFSqrt, BaseKFPartialUpdate):
         x0: NDArray,
         P0: NDArray,
         Y: NDArray,
-        F: Callable,
-        H: Callable,
         start_time: float,
         dt: float,
         square_root: bool = False,
-        override_beta: Union[Callable, None, bool] = False,
+        override_system_F: Union[Callable, None, bool] = False,
+        override_system_H: Union[Callable, None, bool] = False,
+        override_system_beta: Union[Callable, None, bool] = False,
     ) -> tuple[NDArray, NDArray, NDArray]:
         """
         Run the full EKF estimation over a sequence of measurements.
@@ -529,10 +519,6 @@ class EKF(BaseKFSqrt, BaseKFPartialUpdate):
             Initial covariance estimate, shape (n, n).
         Y : NDArray
             Measurement history, shape (T, m).
-        F : Callable
-            Function returning the Jacobian ∂f/∂x: F(x, u, t) → NDArray (n × n).
-        H : Callable
-            Function returning the Jacobian ∂h/∂x: H(x, u, t) → NDArray (m × n).
         start_time : float
             Time corresponding to the first measurement Y[0].
         dt : float
@@ -575,9 +561,20 @@ class EKF(BaseKFSqrt, BaseKFPartialUpdate):
 
         beta = (
             self._beta
-            if override_beta is False
-            else self.set_beta(override_beta, self.sys.state_names)
+            if override_system_beta is False
+            else self.set_beta(override_system_beta, self.sys.state_names)
         )
+        F = (
+            self.sys.F
+            if override_system_F is False
+            else SystemIO.set_F(override_system_F)
+        )
+        H = (
+            self.sys.H
+            if override_system_H is False
+            else SystemIO.set_H(override_system_H)
+        )
+
         for k in range(N_steps):
             yk = Y[k].reshape(-1, 1)
             tk = t_hist_arr[k]

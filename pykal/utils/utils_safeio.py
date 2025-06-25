@@ -17,9 +17,9 @@ class VariableAliases:
     Central alias registry for standardized variable naming.
     """
 
-    _alias_for_x = {"x", "x_k", "state"}
-    _alias_for_u = {"u", "u_k", "input"}
-    _alias_for_t = {"t", "t_k", "time", "tau"}
+    _alias_for_x = {"x", "x_k", "xk", "state"}
+    _alias_for_u = {"u", "u_k", "uk", "input"}
+    _alias_for_t = {"t", "t_k", "tk", "time", "tau"}
 
 
 class SafeIO(VariableAliases):

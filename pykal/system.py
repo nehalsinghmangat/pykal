@@ -4,7 +4,9 @@ from numpy.typing import NDArray
 from scipy.integrate import solve_ivp
 from typing import Callable, Optional, List, Union, Sequence
 from utils.utils_safeio import SafeIO as safeio
+from utils.utils_computation import Differentiation
 from enum import Enum, auto
+import pandas as pd
 
 
 class SystemType(Enum):
@@ -217,7 +219,7 @@ class SystemIO:
         Traceback (most recent call last):
         ...
         TypeError: In function `bad_f1`, parameter `z` is not a recognized alias.
-        Expected one of: ['input', 'state', 't', 't_k', 'tau', 'time', 'u', 'u_k', 'x', 'x_k']
+        Expected one of: ['input', 'state', 't', 't_k', 'tau', 'time', 'tk', 'u', 'u_k', 'uk', 'x', 'x_k', 'xk']
 
         # ❌ MISSING TYPE ANNOTATION
         >>> def bad_f2(x) -> NDArray:
@@ -445,6 +447,103 @@ class SystemIO:
 
         return verified_R(R)
 
+    @safeio.verify_signature_and_parameter_names
+    @staticmethod
+    def set_F(F: Callable) -> Callable:
+        """
+        Set the Jacobian of the dynamics function, `F(x, u, t) = ∂f/∂x`.
+
+        This registers a user-defined Jacobian function and validates its signature.
+
+        Parameters
+        ----------
+        F : Callable
+            A user-defined Jacobian function of the form `F(x, u, t) -> NDArray`.
+
+        Returns
+        -------
+        Callable
+            A validated Jacobian function `F(x, u, t)` returning a matrix of shape (n, n).
+
+        Raises
+        ------
+        TypeError
+            If `F` is `None` or does not conform to the expected function signature.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from numpy.typing import NDArray
+
+        >>> def F_explicit(x: NDArray, u: NDArray, t: float) -> NDArray:
+        ...     return np.eye(len(x))
+
+        >>> F_checked = SystemIO.set_F(F_explicit)
+        >>> F_checked(np.zeros((2, 1)), np.zeros((1, 1)), 0.0)
+        array([[1., 0.],
+               [0., 1.]])
+
+        See Also
+        --------
+        set_f : Register the system dynamics function.
+        set_h : Register the measurement function.
+        set_u : Register the control input function.
+        set_Q : Register the process noise covariance function.
+        """
+        if F is None:
+            raise TypeError("The system function F cannot be None")
+
+        return F
+
+    @safeio.verify_signature_and_parameter_names
+    @staticmethod
+    def set_H(H: Callable) -> Callable:
+        """
+        Set the Jacobian of the measurement function, `H(x, u, t) = ∂h/∂x`.
+
+        This registers a user-defined Jacobian function and validates its signature.
+
+        Parameters
+        ----------
+        H : Callable
+            A user-defined Jacobian function of the form `H(x, u, t) -> NDArray`.
+
+        Returns
+        -------
+        Callable
+            A validated Jacobian function `H(x, u, t)` returning a matrix of shape (m, n).
+
+        Raises
+        ------
+        TypeError
+            If `H` is `None` or does not conform to the expected function signature.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from numpy.typing import NDArray
+
+        >>> def H_explicit(x: NDArray, u: NDArray, t: float) -> NDArray:
+        ...     return np.array([[1.0, 0.0],
+        ...                      [0.0, 2.0]])
+
+        >>> H_checked = SystemIO.set_H(H_explicit)
+        >>> H_checked(np.zeros((2, 1)), np.zeros((1, 1)), 0.0)
+        array([[1., 0.],
+               [0., 2.]])
+
+        See Also
+        --------
+        set_h : Register the measurement function.
+        set_f : Register the system dynamics function.
+        set_F : Register the Jacobian of the dynamics function.
+        set_Q : Register the process noise covariance function.
+        """
+        if H is None:
+            raise TypeError("The measurement Jacobian H cannot be None")
+
+        return H
+
     @staticmethod
     @verify_ordered_string_sequence("state_names")
     def set_state_names(
@@ -485,6 +584,121 @@ class SystemIO:
                 return system_type
 
         return check_system_type(system_type)
+
+    @staticmethod
+    def combine_data_and_time_into_DataFrame(
+        data: NDArray, time: NDArray, column_names: List[str]
+    ) -> pd.DataFrame:
+        """
+        Combine a 2D data array and a 1D time array into a pandas DataFrame.
+
+        Parameters
+        ----------
+        data : NDArray
+            Array of shape (n_variables, n_time_steps).
+        time : NDArray
+            Array of shape (n_time_steps,) or (n_time_steps, 1).
+        column_names : list
+            List of length n_variables giving column names for the data.
+
+        Returns
+        -------
+        df : pd.DataFrame
+            A DataFrame with time as the index and variable names as columns.
+
+        Raises
+        ------
+        ValueError
+            If shapes of data, time, or column_names are incompatible.
+        TypeError
+            If input types are incorrect.
+
+        Examples
+        --------
+        >>> data = np.array([[1.0, 2.0, 3.0], [10.0, 20.0, 30.0]])
+        >>> time = np.array([0.1, 0.2, 0.3])
+        >>> column_names = ["x0", "x1"]
+        >>> df = SystemIO.combine_data_and_time_into_DataFrame(data, time, column_names)
+        >>> df
+              x0    x1
+        time
+        0.1   1.0  10.0
+        0.2   2.0  20.0
+        0.3   3.0  30.0
+
+        >>> bad_data = np.array([1.0, 2.0, 3.0])
+        >>> SystemIO.combine_data_and_time_into_DataFrame(bad_data, time, column_names)
+        Traceback (most recent call last):
+            ...
+        ValueError: `data` must be a 2D array, got shape (3,).
+
+        >>> time_wrong = np.array([0.1, 0.2])
+        >>> SystemIO.combine_data_and_time_into_DataFrame(data, time_wrong, column_names)
+        Traceback (most recent call last):
+            ...
+        ValueError: Time length 2 does not match number of time steps in data 3.
+
+        >>> bad_names = ["x0"]
+        >>> SystemIO.combine_data_and_time_into_DataFrame(data, time, bad_names)
+        Traceback (most recent call last):
+            ...
+        ValueError: Length of column_names (1) does not match number of variables in data (2).
+
+        >>> not_a_list = "x0,x1"
+        >>> SystemIO.combine_data_and_time_into_DataFrame(data, time, not_a_list)
+        Traceback (most recent call last):
+            ...
+        TypeError: `column_names` must be a list, got <class 'str'>
+
+        >>> time_matrix = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]])
+        >>> SystemIO.combine_data_and_time_into_DataFrame(data, time_matrix, column_names)
+        Traceback (most recent call last):
+            ...
+        ValueError: `time` should be of shape (n_steps,) or (n_steps, 1), got (2, 3).
+
+        >>> SystemIO.combine_data_and_time_into_DataFrame(data, time, tuple(column_names))
+        Traceback (most recent call last):
+            ...
+        TypeError: `column_names` must be a list, got <class 'tuple'>
+
+        """
+
+        if not isinstance(data, np.ndarray):
+            raise TypeError(f"`data` must be an np.ndarray, got {type(data)}")
+        if not isinstance(time, np.ndarray):
+            raise TypeError(f"`time` must be an np.ndarray, got {type(time)}")
+        if not isinstance(column_names, list):
+            raise TypeError(f"`column_names` must be a list, got {type(column_names)}")
+
+        if data.ndim != 2:
+            raise ValueError(f"`data` must be a 2D array, got shape {data.shape}.")
+
+        n_vars, n_steps = data.shape
+
+        if time.ndim == 2:
+            if time.shape[1] != 1:
+                raise ValueError(
+                    f"`time` should be of shape (n_steps,) or (n_steps, 1), got {time.shape}."
+                )
+            time = time.flatten()
+        elif time.ndim != 1:
+            raise ValueError(
+                f"`time` must be 1D or 2D with one column, got shape {time.shape}."
+            )
+
+        if time.shape[0] != n_steps:
+            raise ValueError(
+                f"Time length {time.shape[0]} does not match number of time steps in data {n_steps}."
+            )
+
+        if len(column_names) != n_vars:
+            raise ValueError(
+                f"Length of column_names ({len(column_names)}) does not match number of variables in data ({n_vars})."
+            )
+
+        df = pd.DataFrame(data.T, index=time, columns=column_names)
+        df.index.name = "time"
+        return df
 
 
 class System:
@@ -579,6 +793,8 @@ class System:
         state_names: List[str],
         measurement_names: List[str],
         system_type: SystemType = SystemType.CONTINUOUS_TIME_INVARIANT,
+        F: Optional[Callable] = None,
+        H: Optional[Callable] = None,
         u: Optional[Callable] = None,
         Q: Optional[Callable] = None,
         R: Optional[Callable] = None,
@@ -595,6 +811,21 @@ class System:
         self._input_names = SystemIO.set_input_names(input_names)
         self._system_type = SystemIO.set_system_type(system_type)
 
+        if F is None:
+
+            def F(xk: NDArray, uk: NDArray, tk: float) -> NDArray:
+                Jx, Ju = Differentiation.compute_empirical_jacobian(f, xk, uk, tk)
+                return Jx
+
+        if H is None:
+
+            def H(xk: NDArray, uk: NDArray, tk: float) -> NDArray:
+                Jx, Ju = Differentiation.compute_empirical_jacobian(h, xk, uk, tk)
+                return Jx
+
+        self._F = SystemIO.set_F(F)
+        self._H = SystemIO.set_H(H)
+
     @property
     def f(self):
         return self._f
@@ -604,12 +835,28 @@ class System:
         self._f = SystemIO.set_f(func)
 
     @property
+    def F(self):
+        return self._F
+
+    @F.setter
+    def F(self, F):
+        self._F = SystemIO.set_F(F)
+
+    @property
     def h(self):
         return self._h
 
     @h.setter
     def h(self, func):
         self._h = SystemIO.set_h(func)
+
+    @property
+    def H(self):
+        return self._H
+
+    @H.setter
+    def H(self, H):
+        self._H = SystemIO.set_F(H)
 
     @property
     def Q(self):
