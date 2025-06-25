@@ -1,12 +1,12 @@
 from functools import wraps
-from system import System, SystemIO
-from _base_kf import BaseKFSqrt, BaseKFPartialUpdate
+from pykal.system import System, SystemIO
+from pykal._base_kf import BaseKFSqrt, BaseKFPartialUpdate
 import numpy as np
 from numpy.typing import NDArray
 from typing import Callable, Optional, Sequence, Union
 import numpy as np
 from numpy.typing import NDArray
-from utils.utils_safeio import SafeIO as safeio
+from pykal.utils.utils_safeio import SafeIO as safeio
 
 
 class EKFIO:
@@ -159,7 +159,7 @@ class EKF(BaseKFSqrt, BaseKFPartialUpdate):
     --------
     >>> import numpy as np
     >>> from numpy.typing import NDArray
-    >>> from system import System, SystemType
+    >>> from pykal.system import System, SystemType
 
     # Define system dynamics, measurement, and Jacobians
     >>> def f(x: NDArray, u: NDArray, t: float) -> NDArray:

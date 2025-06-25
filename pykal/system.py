@@ -3,8 +3,8 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.integrate import solve_ivp
 from typing import Callable, Optional, List, Union, Sequence
-from utils.utils_safeio import SafeIO as safeio
-from utils.utils_computation import Differentiation
+from pykal.utils.utils_safeio import SafeIO as safeio
+from pykal.utils.utils_computation import Differentiation
 from enum import Enum, auto
 import pandas as pd
 

@@ -185,7 +185,8 @@ class Error:
         --------
         >>> truedf = pd.DataFrame({'x0': [1.0, 2.0], 'x1': [1.0, 3.0]}, index=[0.0, 1.0])
         >>> estdf = pd.DataFrame({'x0': [1.1, 1.9], 'x1': [0.9, 3.2]}, index=[0.0, 1.0])
-        >>> compute_pointwise_error_metrics(truedf, estdf).round(2)
+        >>> from pykal.utils.utils_computation import Error
+        >>> Error.compute_pointwise_error_metrics(truedf, estdf).round(2)
               RMSE  MAE  MaxErr
         0.0  0.10  0.10     0.1
         1.0  0.16  0.15     0.2
@@ -236,10 +237,12 @@ class Error:
 
         Examples
         --------
+        >>> import pandas as pd
+        >>> from pykal.utils.utils_computation import Error
         >>> truedf = pd.DataFrame({'x0': [1.0], 'x1': [1.0]}, index=[0.0])
         >>> estdf = pd.DataFrame({'x0': [1.1], 'x1': [0.9]}, index=[0.0])
         >>> P_seq = pd.Series({0.0: 0.1 * np.eye(2)})
-        >>> compute_nees_only(truedf, estdf, P_seq).round(2)
+        >>> Error.compute_nees_only(truedf, estdf, P_seq).round(2)
         0.0    0.2
         Name: NEES, dtype: float64
         """
@@ -301,10 +304,11 @@ class Error:
         --------
         >>> import pandas as pd
         >>> import numpy as np
+        >>> from pykal.utils.utils_computation import Error
         >>> truedf = pd.DataFrame({'x0': [1.0], 'x1': [2.0]}, index=[0.0])
         >>> estdf = pd.DataFrame({'x0': [1.1], 'x1': [1.9]}, index=[0.0])
         >>> P_seq = pd.Series({0.0: 0.1 * np.eye(2)})
-        >>> compute_nll(truedf, estdf, P_seq).round(2)
+        >>> Error.compute_nll(truedf, estdf, P_seq).round(2)
         0.0    -0.36
         Name: NLL, dtype: float64
         """
@@ -344,9 +348,10 @@ class Error:
         Examples
         --------
         >>> import pandas as pd
+        >>> from pykal.utils.utils_computation import Error
         >>> truedf = pd.DataFrame({'x0': [1.0, 2.0], 'x1': [2.0, 4.0]}, index=[0.0, 1.0])
         >>> estdf = pd.DataFrame({'x0': [1.1, 1.9], 'x1': [2.1, 3.8]}, index=[0.0, 1.0])
-        >>> compute_mse_per_state(truedf, estdf).round(4)
+        >>> Error.compute_mse_per_state(truedf, estdf).round(4)
         x0    0.010
         x1    0.025
         dtype: float64
