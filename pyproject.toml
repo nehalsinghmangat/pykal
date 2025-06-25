@@ -29,6 +29,7 @@ dev = [
 
   # Testing & coverage
   "pytest>=7.0",
+  "pytest-doctestplus>=1.0.0",
   "pytest-cov",
   "coverage[toml]",
 
@@ -36,6 +37,7 @@ dev = [
   "flake8>=6.0",
   "black>=24.0",
   "isort>=6.0",
+  "pylint",
 
   # Static typing 
   "mypy>=1.0",
@@ -53,11 +55,16 @@ dev = [
   "sphinx-rtd-theme>=1.3",
   "nbsphinx>=0.9.7",  
   "myst-parser>=1.0",
-  "pylint"
+  "sphinxcontrib-graphviz>=0.1",
+  "sphinx-toolbox>=3.5"  # for inheritance-diagram
 ]
+
 
 [project.urls]
 Homepage = "https://github.com/nehalsinghmangat/pykal"
 Documentation = "https://pykal.readthedocs.io"
 
+[tool.pytest.ini_options]
+addopts = "--doctest-modules"
+doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS"]
 
