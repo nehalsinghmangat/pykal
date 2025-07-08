@@ -1,102 +1,12 @@
-from functools import wraps
-from pykal.system import System, SystemIO
-from pykal._base_kf import BaseKFSqrt, BaseKFPartialUpdate
+from pykal._base_kf import BaseKF
+from pykal.system import System
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
-from typing import Callable, Optional, Sequence, Union
-import numpy as np
-from numpy.typing import NDArray
-from pykal.utils.utils_safeio import SafeIO as safeio
+from typing import Callable, Optional, Union
 
 
-class EKFIO:
-    @staticmethod
-    def verify_run_inputs(func: Callable) -> Callable:
-        """
-        Decorator to validate inputs to the Kalman Filter `run` method.
-
-        Ensures that initial conditions, measurement data, Jacobians, and
-        simulation parameters are correctly typed and dimensioned before execution.
-
-        Validation Rules
-        ----------------
-        - `x0`, `P0`: shapes (n, 1) and (n, n)
-        - `Y`: shape (T, m), with T ≥ 1 and m ≥ 1
-        - `F`, `H`, `u`: must be callables
-        - `start_time`, `dt`: must be float or int
-        - `square_root`: must be a boolean
-
-        Parameters
-        ----------
-        func : Callable
-            The `run` method to be wrapped and validated.
-
-        Raises
-        ------
-        ValueError
-            If `Y` does not have valid dimensions.
-        TypeError
-            For incorrect types of Jacobians, time parameters, or boolean flags.
-
-        Returns
-        -------
-        Callable
-            A wrapped version of the `run` method with validation enforced.
-        """
-
-        @wraps(func)
-        def wrapper(
-            self,
-            *,
-            x0: NDArray,
-            P0: NDArray,
-            Y: NDArray,
-            start_time: float,
-            dt: float,
-            square_root: bool = False,
-            override_system_F: Union[Callable, None, bool] = False,
-            override_system_H: Union[Callable, None, bool] = False,
-            override_system_beta: Union[Callable, None, bool] = False,
-            **kwargs,
-        ):
-            if not isinstance(Y, np.ndarray) or Y.ndim != 2:
-                raise ValueError("Y must be a 2D NumPy array of shape (T, m)")
-            N_steps, m_meas = Y.shape
-            if N_steps == 0:
-                raise ValueError(
-                    "Measurement history `Y` must contain at least one row"
-                )
-            if m_meas == 0:
-                raise ValueError(
-                    "Measurement history `Y` must contain at least one column"
-                )
-
-            if not isinstance(start_time, (int, float)):
-                raise TypeError("start_time must be a float or int")
-            if not isinstance(dt, (int, float)):
-                raise TypeError("dt must be a float or int")
-
-            if not isinstance(square_root, bool):
-                raise TypeError("square_root must be a boolean flag")
-
-            return func(
-                self,
-                x0=x0,
-                P0=P0,
-                Y=Y,
-                start_time=start_time,
-                dt=dt,
-                square_root=square_root,
-                override_system_F=override_system_F,
-                override_system_H=override_system_H,
-                override_system_beta=override_system_beta,
-                **kwargs,
-            )
-
-        return wrapper
-
-
-class EKF(BaseKFSqrt, BaseKFPartialUpdate):
+class EKF(BaseKF):
     """
     Extended Kalman Filter (EKF) with optional partial updates and square-root filtering.
 
@@ -130,7 +40,7 @@ class EKF(BaseKFSqrt, BaseKFPartialUpdate):
 
         The system must also define:
           - The system type (discrete/continuous, time-varying/invariant)
-          - Variable name metadata for states and measurements
+           - Variable name metadata for states and measurements
 
     Notes
     -----
@@ -279,15 +189,108 @@ class EKF(BaseKFSqrt, BaseKFPartialUpdate):
     >>> # First state is only partially corrected (less aggressive than β = 1)
     >>> not np.allclose(X_est[1:, 0], X_sim[0,:])  # state 0 differs from true
     True
+
+    # === override_system_beta = None implies beta = 0 (no updates) ===
+    >>> X_est, P_est, T_out = ekf.run(
+    ...     x0=x0, P0=P0, Y=Y.T,
+    ...     start_time=0.0,
+    ...     dt=0.1,
+    ...     square_root=False,
+    ...     override_system_beta=None)
+
+    >>> X_est.shape == (Y.shape[1] + 1, 2)
+    True
+    >>> np.allclose(X_est[0], x0.flatten())
+    True
+    >>> np.allclose(X_est, np.tile(x0.flatten(), (X_est.shape[0], 1)))
+    True  # all estimates are frozen (equal to x0)
+
+    # === Check that covariance updates respect beta ===
+
+    # Full update: all states should decrease uncertainty
+    >>> np.all(np.diff([np.trace(P) for P in P_est]) < 1e-8)  # or use np.diff(..., axis=0)
+    True  # Trace should decrease or stay the same
+
+    # SKF: second state covariance stays constant (only first is updated)
+    >>> def beta(t: float) -> NDArray:
+    ...     return np.array([[1.0], [0.0]])
+
+    >>> ekf.beta = beta
+    >>> _, P_skf, _ = ekf.run(
+    ...     x0=x0, P0=P0, Y=Y.T,
+    ...     start_time=0.0,
+    ...     dt=0.1,
+    ...     square_root=False,
+    ...     override_system_beta=False)
+
+    >>> all(np.isclose(P[1, 1], P0[1, 1]) for P in P_skf)
+    True
+    >>> any(P[0, 0] < P0[0, 0] for P in P_skf)
+    True
+
+    # β = 0: Covariance remains unchanged
+    >>> _, P_frozen, _ = ekf.run(
+    ...     x0=x0, P0=P0, Y=Y.T,
+    ...     start_time=0.0,
+    ...     dt=0.1,
+    ...     square_root=False,
+    ...     override_system_beta=None)
+
+    >>> all(np.allclose(P, P0) for P in P_frozen)
+    True
+
     """
 
-    def __init__(
-        self,
-        sys: System,
-        beta: Optional[Callable[[NDArray, NDArray, float], NDArray]] = None,
-    ):
+    def trivial_beta(self, t: float) -> NDArray[np.float64]:
+        """
+        Return a trivial beta vector of all ones (full update) at time t.
 
-        super().__init__(sys=sys, beta=beta)
+        Parameters
+        ----------
+        t : float
+            Time (not used, but required for signature consistency)
+
+        Returns
+        -------
+        NDArray[np.float64]
+            An (n x 1) array of ones, where n = number of states
+        """
+        n = len(self.sys.state_names)
+        return np.ones((n, 1), dtype=np.float64)
+
+    def __init__(self, sys: System, beta: Optional[Callable] = None):
+        super().__init__(sys=sys)
+        if beta is None:
+            self._beta = self.trivial_beta
+        else:
+            self._beta = self.sys._validate_func_signature(beta)
+
+    @property
+    def beta(self) -> Callable[[float], NDArray[np.float64]]:
+        """
+        Get the current beta function.
+
+        Returns
+        -------
+        Callable[[float], NDArray[np.float64]]
+            The beta function used to weight the update.
+        """
+        return self._beta
+
+    @beta.setter
+    def beta(self, beta: Callable[[float], NDArray[np.float64]]) -> None:
+        """
+        Set a new beta function after validating its signature.
+
+        Parameters
+        ----------
+        new_beta : Callable[[float], NDArray[np.float64]]
+            A new beta function mapping float → (n x 1) ndarray
+        """
+        if beta is None:
+            self._beta = self.trivial_beta
+        else:
+            self._beta = self.sys._validate_func_signature(beta)
 
     def _predict(
         self,
@@ -366,17 +369,12 @@ class EKF(BaseKFSqrt, BaseKFPartialUpdate):
           of user-defined functions.
         """
 
-        if self.sys.system_type in (
-            self.sys.system_type.CONTINUOUS_TIME_INVARIANT,
-            self.sys.system_type.CONTINUOUS_TIME_VARYING,
-        ):
-            dx = safeio.call_validated_function_with_args(self.sys.f, x=xk, u=uk, t=tk)
+        if self.sys.system_type in ("cti", "ctv"):
+            dx = self.sys.smart_call(self.sys.f, x=xk, u=uk, t=tk)
             x_pred = xk + dx * dt
             P_pred = Pk + (Fk @ Pk + Pk @ Fk.T + Qk) * dt
         else:
-            x_pred = safeio.call_validated_function_with_args(
-                self.sys.f, x=xk, u=uk, t=tk
-            )
+            x_pred = self.sys.smart_call(self.sys.f, x=xk, u=uk, t=tk)
 
             if square_root:
                 P_pred = self._square_root_predict_covariance(Pk, Fk, Qk)
@@ -478,11 +476,12 @@ class EKF(BaseKFSqrt, BaseKFPartialUpdate):
         Kk = Pk @ Hk.T @ Sk_inv
 
         innovation = yk - y_pred
-        x_upd = xk + Kk @ innovation
+        x_upd = xk + beta_mat @ Kk @ innovation
 
         # === Covariance update ===
         if square_root:
             P_base = self._square_root_update_covariance(Pk, Hk, Rk)
+
         else:
             I_KH = np.eye(Pk.shape[0]) - Kk @ Hk
             P_base = I_KH @ Pk @ I_KH.T + Kk @ Rk @ Kk.T
@@ -491,25 +490,27 @@ class EKF(BaseKFSqrt, BaseKFPartialUpdate):
 
         return x_upd, P_upd
 
-    @EKFIO.verify_run_inputs
     def run(
         self,
         *,
         x0: NDArray,
         P0: NDArray,
-        Y: NDArray,
-        start_time: float,
-        dt: float,
+        Y: Optional[NDArray] = None,
+        Y_df: Optional[pd.DataFrame] = None,
+        t_span: Optional[tuple[float, float]] = None,
+        dt: Optional[float] = None,
+        t_vector: Optional[NDArray] = None,
+        input_df: Optional[bool] = False,
+        output_df: Optional[bool] = False,
         square_root: bool = False,
-        override_system_F: Union[Callable, None, bool] = False,
-        override_system_H: Union[Callable, None, bool] = False,
+        override_system_F: Union[Callable, bool] = False,
+        override_system_H: Union[Callable, bool] = False,
         override_system_beta: Union[Callable, None, bool] = False,
-    ) -> tuple[NDArray, NDArray, NDArray]:
+        override_system_Q: Union[Callable, None, bool] = False,
+        override_system_R: Union[Callable, None, bool] = False,
+    ) -> Union[tuple[pd.DataFrame, pd.Series], tuple[NDArray, NDArray, NDArray]]:
         """
         Run the full EKF estimation over a sequence of measurements.
-
-        At each step, applies `_predict` followed by `_update` using the supplied
-        Jacobian and noise functions.
 
         Parameters
         ----------
@@ -518,88 +519,138 @@ class EKF(BaseKFSqrt, BaseKFPartialUpdate):
         P0 : NDArray
             Initial covariance estimate, shape (n, n).
         Y : NDArray
-            Measurement history, shape (T, m).
-        start_time : float
-            Time corresponding to the first measurement Y[0].
-        dt : float
-            Time step between measurements.
-        u : Callable
-            Function u(t) → NDArray of shape (m, 1), providing the control input.
+            Measurement history, shape (m, T).
+        t_span : tuple[float, float], optional
+            Time interval corresponding to measurements.
+        dt : float, optional
+            Time step.
+        t_vector : NDArray, optional
+            Optional explicit time vector.
+        ...
 
-        override_system_u : Union[Callable, None, bool], optional
-            - `False` (default): use internal system dynamics `f`.
-            - `None`: raise an error — `f` is required.
-            - Callable: use this function as dynamics override.
         Returns
         -------
         x_hist : NDArray
-            Filtered state estimates at all times, shape (T+1, n).
+            Filtered state estimates, shape (n, T+1).
         P_hist : NDArray
-            Covariance estimates at all times, shape (T+1, n, n).
+            Covariance estimates, shape (n, n, T+1).
         t_hist : NDArray
-            Time vector corresponding to each state estimate, shape (T+1,).
-
-
+            Time vector used, shape (T+1,).
         """
+
+        # Convert from DataFrame if needed
+        if input_df:
+            if Y_df is None:
+                raise ValueError("Y_df must be provided when input_df=True")
+            T = Y_df.index.to_numpy()
+            Y = Y_df.to_numpy().T  # shape (n_states, n_steps)
+        else:
+            if Y is None:
+                raise ValueError("Y must be provided when input_df=False")
+            if not isinstance(Y, np.ndarray):
+                raise TypeError("Y must be a NumPy array")
+
+            T = self.sys._standardize_time_input_to_linspace(t_vector, t_span, dt)
+            if Y.shape[1] != len(T):
+                raise ValueError(
+                    f"Y has {Y.shape[1]} steps, but time vector has {len(T)} steps"
+                )
+
         n_states = len(self.sys.state_names)
         m_meas = len(self.sys.measurement_names)
-        N_steps, M_meas = Y.shape
+        M_meas, N_steps = Y.shape
 
         if M_meas != m_meas:
             raise ValueError(
                 f"Measurement dimension mismatch: got {M_meas}, expected {m_meas}"
             )
 
-        x_hist_arr = np.empty((N_steps + 1, n_states))
-        P_hist_arr = np.empty((N_steps + 1, n_states, n_states))
-        t_hist_arr = start_time + np.arange(N_steps + 1) * dt
+        if self.sys.F is None and override_system_F is False:
+            raise TypeError(
+                "System Jacobian F is None. Please initialize or override it."
+            )
+
+        if self.sys.H is None and override_system_H is False:
+            raise TypeError(
+                "System Jacobian H is None. Please initialize or override it."
+            )
+
+        x_hist_arr = np.empty((n_states, N_steps + 1))
+        P_hist_arr = np.empty((n_states, n_states, N_steps + 1))
+
+        dt_inferred = T[1] - T[0]
+        t_linspace = np.append(T, T[-1] + dt_inferred)
 
         xk = x0
         Pk = P0
-        x_hist_arr[0] = xk.flatten()
-        P_hist_arr[0] = Pk
+        x_hist_arr[:, 0] = xk.flatten()
+        P_hist_arr[:, :, 0] = Pk
 
-        beta = (
-            self._beta
-            if override_system_beta is False
-            else self.set_beta(override_system_beta, self.sys.state_names)
+        beta = self.sys._resolve_override_func(
+            override_system_beta, self.beta, self.trivial_beta
         )
-        F = (
-            self.sys.F
-            if override_system_F is False
-            else SystemIO.set_F(override_system_F)
+        F = self.sys._resolve_override_func(override_system_F, self.sys.F)
+        H = self.sys._resolve_override_func(override_system_H, self.sys.H)
+        Q = self.sys._resolve_override_func(
+            override_system_Q, self.sys.Q, System.zero_Q(self.sys.state_names)
         )
-        H = (
-            self.sys.H
-            if override_system_H is False
-            else SystemIO.set_H(override_system_H)
+        R = self.sys._resolve_override_func(
+            override_system_R, self.sys.R, System.zero_R(self.sys.measurement_names)
         )
 
         for k in range(N_steps):
-            yk = Y[k].reshape(-1, 1)
-            tk = t_hist_arr[k]
+            tk = t_linspace[k]
+            tk1 = t_linspace[k + 1]
+            dt_k = tk1 - tk
 
-            uk = safeio.call_validated_function_with_args(
+            yk = Y[:, k].reshape(-1, 1)
+
+            uk = self.sys.smart_call(
                 self.sys.u, t=tk, expected_shape=(len(self.sys.input_names), 1)
             )
-            y_pred = safeio.call_validated_function_with_args(
-                self.sys.h, x=xk, u=uk, t=tk
+            y_pred = self.sys.smart_call(self.sys.h, x=xk, u=uk, t=tk)
+
+            Fk = self.sys.smart_call(
+                F, x=xk, u=uk, t=tk, expected_shape=(n_states, n_states)
             )
-            Fk = safeio.call_validated_function_with_args(F, x=xk, u=uk, t=tk)
-            Hk = safeio.call_validated_function_with_args(H, x=xk, u=uk, t=tk)
-            Qk = safeio.call_validated_function_with_args(self.sys.Q, x=xk, u=uk, t=tk)
-            Rk = safeio.call_validated_function_with_args(self.sys.R, x=xk, u=uk, t=tk)
+            Hk = self.sys.smart_call(
+                H, x=xk, u=uk, t=tk, expected_shape=(m_meas, n_states)
+            )
+            Qk = self.sys.smart_call(
+                Q, x=xk, u=uk, t=tk, expected_shape=(n_states, n_states)
+            )
+            Rk = self.sys.smart_call(
+                R, x=xk, u=uk, t=tk, expected_shape=(m_meas, m_meas)
+            )
             beta_mat = np.diagflat(
-                safeio.call_validated_function_with_args(
-                    beta, t=tk, expected_shape=(n_states, 1)
-                )
+                self.sys.smart_call(beta, x = xk, u = uk, t=tk, Pk=Pk,expected_shape=(n_states, 1))
             )
-            xk, Pk = self._predict(xk, Pk, Fk, Qk, dt, uk, tk, square_root)
+
+            xk, Pk = self._predict(xk, Pk, Fk, Qk, dt_k, uk, tk, square_root)
             xk, Pk = self._update(
-                xk, Pk, yk, y_pred, Hk, Rk, dt, uk, tk, square_root, beta_mat
+                xk, Pk, yk, y_pred, Hk, Rk, dt_k, uk, tk, square_root, beta_mat
             )
 
-            x_hist_arr[k + 1] = xk.flatten()
-            P_hist_arr[k + 1] = Pk
+            x_hist_arr[:, k + 1] = xk.flatten()
+            P_hist_arr[:, :, k + 1] = Pk
 
-        return x_hist_arr, P_hist_arr, t_hist_arr
+        if output_df:
+            X_est_df = pd.DataFrame(
+                x_hist_arr.T,
+                index=t_linspace,
+                columns=[f"est_{name}" for name in self.sys.state_names]
+            )
+            
+
+            X_est_df.index.name = "time"
+
+            P_hist_sr = pd.Series(
+                {t: P_hist_arr[:, :, i] for i, t in enumerate(t_linspace)}
+            )
+            return X_est_df, P_hist_sr
+
+        return x_hist_arr, P_hist_arr, t_linspace
+
+
+class UKF(BaseKF):
+    pass

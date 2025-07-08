@@ -1,12 +1,9 @@
-from functools import wraps
+import scipy.linalg
+import numpy as np
 from typing import Callable, Optional, Sequence, Union
 from numpy.typing import NDArray
 from abc import ABC, abstractmethod
 from pykal.system import System
-import scipy.linalg
-import numpy as np
-from pykal.system import System
-from pykal.utils.utils_safeio import SafeIO as safeio
 
 
 class BaseKF(ABC):
@@ -23,47 +20,13 @@ class BaseKF(ABC):
         measurement model (`h`), and optional noise models (`Q`, `R`). The system must also
         define the timing structure (`SystemType`) and variable name metadata.
 
-    Requirements
-    ------------
-    The provided `System` object must conform to strict function input/output standards:
-      - `f(x, u, t)` returns the time derivative or next state (n×1 ndarray)
-      - `h(x, u, t)` returns measurements (m×1 ndarray)
-      - `Q(x, u, t)` returns process noise covariance (n×n ndarray)
-      - `R(x, u, t)` returns measurement noise covariance (m×m ndarray)
-
     All callable models are validated using `validate_system_function` from `utils.iosafety`
     and are accessed safely using `call_validated_function_with_args`.
-
-    Notes
-    -----
-    The `BaseKF` class does not implement filtering logic directly. It only defines
-    the contract that derived filters must follow. This abstraction supports flexible,
-    robust subclassing for EKF, UKF, PSKF, OPSKF, etc.
 
     Attributes
     ----------
     sys : System
         The system model used for filtering. Exposes all validated model functions and metadata.
-
-    Abstract Methods
-    ----------------
-    predict(xk, Pk, Fk, Qk, dt, uk, tk) → (x_pred, P_pred)
-        Perform the prediction step of the Kalman filter at time `tk`.
-        Must handle propagation of mean `xk` and covariance `Pk` using Jacobian `Fk`
-        and process noise `Qk`.
-
-    update(xk, Pk, yk, Hk, Rk, dt, uk, tk) → (x_upd, P_upd)
-        Perform the measurement update using the observation `yk` at time `tk`.
-        Must use the measurement Jacobian `Hk` and noise covariance `Rk`.
-
-    run(x0, P0, Y, F, H, start_time, dt, U) → (X, P, T)
-        Run the full filter over a measurement sequence `Y`.
-        Applies prediction and update steps at each time step using linearizations `F`, `H`,
-        and optionally time-varying inputs `U(t)`.
-        Returns:
-          - `X`: state estimates over time, shape (n_states, T)
-          - `P`: state covariances over time, shape (n_states, n_states, T)
-          - `T`: time vector, shape (T,)
     """
 
     def __init__(self, sys: System) -> None:
@@ -106,30 +69,7 @@ class BaseKF(ABC):
         """
         ...
 
-    @abstractmethod
-    def run(
-        self,
-        *,
-        x0: NDArray,
-        P0: NDArray,
-        Y: NDArray,
-        start_time: float,
-        dt: float,
-        square_root: bool = False,
-        override_system_F: Union[Callable, None, bool] = False,
-        override_system_H: Union[Callable, None, bool] = False,
-        override_system_beta: Union[Callable, None, bool] = False,
-    ) -> tuple[NDArray, NDArray, NDArray]:
-        """
-        Run the full filter over a measurement sequence `Y`.
-        """
-        ...
-
-
-class BaseKFSqrt(BaseKF):
-    def __init__(self, sys: System, **kwargs):
-        super().__init__(sys)
-
+    ## Extenstion: Square-Root Factorization
     def _square_root_predict_covariance(
         self,
         Pk: NDArray,
@@ -199,77 +139,9 @@ class BaseKFSqrt(BaseKF):
         P_upd = R.T @ R
         return 0.5 * (P_upd + P_upd.T)  # symmetrize
 
+    ## Extenstion: UD Factorization
 
-class BaseKFPartialUpdate(BaseKF):
-    """
-    Abstract base class for Kalman Filters supporting per-state partial updates.
-
-    This class adds a validated β function to control the update strength of each
-    state during the correction step. Each βₖ ∈ [0, 1]^n is a column vector that is
-    broadcast into a diagonal matrix used to weight the update.
-
-    Subclasses should invoke `self._beta(t)` to retrieve βₖ at each time step.
-
-    Attributes
-    ----------
-    _beta : Callable[[float], NDArray]
-        A function β(t) → NDArray of shape (n, 1), where each entry ∈ [0, 1].
-        This is converted to a diagonal weighting matrix during the update.
-    """
-
-    def __init__(self, sys: System, beta: Optional[Callable] = None, **kwargs):
-        super().__init__(sys)
-        self._beta = self.set_beta(beta, self.sys.state_names)
-
-    @property
-    def beta(self) -> Callable:
-        """Return the current β function."""
-        return self._beta
-
-    @beta.setter
-    def beta(self, func: Callable):
-        """Set a new β function and validate its output shape."""
-        self._beta = self.set_beta(func, self.sys.state_names)
-
-    def set_beta(
-        self, beta: Union[Callable, None, bool], state_names: Sequence[str]
-    ) -> Callable:
-        """
-        Set the β function for the Partial-Update Kalman Filter (PKF).
-
-        This function defines how much each individual state is updated during the EKF
-        correction step. The user may provide a callable β(t) → NDArray of shape (n, 1),
-        where `n = len(state_names)`. If `beta` is None, a default function is returned
-        that always outputs a column vector of ones (full update).
-
-        Parameters
-        ----------
-        beta : Callable or None
-            A function of the form `beta(t) -> NDArray` of shape (n, 1), or `None` to
-            use the default (full update) behavior.
-        state_names : Sequence[str]
-            List of state names used to determine the output shape of the default β.
-
-        Returns
-        -------
-        Callable
-            A validated β function returning an array of shape (n, 1), where n = number of states.
-        """
-        if beta is None:
-            n_states = len(state_names)
-
-            def default_beta(t: float) -> NDArray:
-                return np.ones((n_states, 1))
-
-            return default_beta
-        else:
-
-            @safeio.verify_signature_and_parameter_names
-            def verify_beta(beta: Callable) -> Callable:
-                return beta
-
-            return verify_beta(beta)
-
+    ## Extension: Partial Update
     def _apply_partial_update(
         self, P_base: NDArray, Pk: NDArray, tk: float, beta_mat: NDArray
     ) -> NDArray:

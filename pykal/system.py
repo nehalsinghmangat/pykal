@@ -16,44 +16,48 @@ class System(SafeIO):
 
     """
 
+    system_types = {"cti", "ctv", "dti", "dtv"}
+
     @staticmethod
     def default_h(x: NDArray[np.float64]) -> NDArray[np.float64]:
         return x
 
     @staticmethod
-    def default_u() -> NDArray:
-        return np.zeros((1, 1))
+    def default_u(input_names: Sequence[str]) -> Callable:
+        def u() -> NDArray:
+            return np.zeros((len(input_names), 1))
 
-    def default_process_noise(self) -> NDArray:
+        return u
 
-        return np.eye(len(self.state_names), len(self.state_names)) * 0.01
+    @staticmethod
+    def default_Q(state_names: Sequence[str]) -> Callable:
+        def Q() -> NDArray:
+            return np.eye(len(state_names), len(state_names)) * 0.01
 
-    def zero_process_noise(self) -> NDArray:
+        return Q
 
-        return 0 * np.eye(len(self.state_names), len(self.state_names))
+    @staticmethod
+    def zero_Q(state_names: Sequence[str]) -> Callable:
+        def Q() -> NDArray:
+            return np.eye(len(state_names), len(state_names)) * 0.0
 
-    def default_measurement_noise(self) -> NDArray:
+        return Q
 
-        return np.eye(len(self.measurement_names), len(self.measurement_names)) * 0.01
+    @staticmethod
+    def default_R(measurement_names: Sequence[str]) -> Callable:
 
-    def zero_measurement_noise(self) -> NDArray:
+        def R() -> NDArray:
+            return np.eye(len(measurement_names), len(measurement_names)) * 0.01
 
-        return 0 * np.eye(len(self.measurement_names), len(self.measurement_names))
+        return R
 
-    def _validate_system_type(self, system_type: str) -> str:
-        if not isinstance(system_type, str):
-            raise TypeError(
-                f"System type must be a string, got {type(system_type).__name__}"
-            )
-        system_type = system_type.lower()
-        if system_type not in self.system_types:
-            raise ValueError(
-                f"Unrecognized system type '{system_type}'. "
-                f"Expected one of: {sorted(self.system_types)}"
-            )
-        return system_type
+    @staticmethod
+    def zero_R(measurement_names: Sequence[str]) -> Callable:
 
-    system_types = {"cti", "ctv", "dti", "dtv"}
+        def R() -> NDArray:
+            return np.eye(len(measurement_names), len(measurement_names)) * 0.0
+
+        return R
 
     def __init__(
         self,
@@ -94,17 +98,19 @@ class System(SafeIO):
             self._validate_func_signature(h) if h is not None else System.default_h
         )
         self._u = (
-            self._validate_func_signature(u) if u is not None else System.default_u
+            self._validate_func_signature(u)
+            if u is not None
+            else System.default_u(self.input_names)
         )
         self._Q = (
             self._validate_func_signature(Q)
             if Q is not None
-            else self.default_process_noise
+            else self.default_Q(self.state_names)
         )
         self._R = (
             self._validate_func_signature(R)
             if R is not None
-            else self.default_measurement_noise
+            else self.default_R(self.measurement_names)
         )
         self._F = self._validate_func_signature(F) if F is not None else F
         self._H = self._validate_func_signature(H) if H is not None else H
@@ -169,7 +175,9 @@ class System(SafeIO):
     @u.setter
     def u(self, u):
         self._u = (
-            self._validate_func_signature(u) if u is not None else System.default_u
+            self._validate_func_signature(u)
+            if u is not None
+            else System.default_u(self.input_names)
         )
 
     @property
@@ -179,7 +187,7 @@ class System(SafeIO):
     @Q.setter
     def Q(self, Q):
         if Q is None:
-            self._Q = self.zero_process_noise
+            self._Q = self.zero_Q(self.state_names)
         else:
             self._Q = self._validate_func_signature(Q)
 
@@ -190,7 +198,7 @@ class System(SafeIO):
     @R.setter
     def R(self, R):
         if R is None:
-            self._R = self.zero_measurement_noise
+            self._R = self.zero_R
         else:
             self._R = self._validate_func_signature(R)
 
@@ -361,27 +369,28 @@ class System(SafeIO):
         t_span: Optional[tuple[float, float]] = None,
         dt: Optional[float] = None,
         t_vector: Optional[NDArray] = None,
+        output_df: Optional[bool] = False,
         override_system_f: Union[Callable, None, bool] = False,
         override_system_u: Union[Callable, None, bool] = False,
-        override_system_state_names: Union[Sequence[str], bool] = False,
-        override_system_input_names: Union[Sequence[str], bool] = False,
+        override_system_state_names: Union[List[str], bool] = False,
+        override_system_input_names: Union[List[str], bool] = False,
         override_system_Q: Union[Callable, None, bool] = False,
-    ) -> tuple[NDArray, NDArray]:
+    ) -> Union[pd.DataFrame, tuple[NDArray, NDArray]]:
 
-        # Override attributes
-        state_names = (
-            self.state_names
-            if override_system_state_names is False
-            else self._validate_string_sequence(override_system_state_names)
+        state_names = self._resolve_override_str_list(
+            override_system_state_names, self.state_names
         )
 
-        input_names = (
-            self.input_names
-            if override_system_input_names is False
-            else self._validate_string_sequence(override_system_input_names)
+        input_names = self._resolve_override_str_list(
+            override_system_input_names, self.input_names
         )
 
-        # Initial Condition check
+        f = self._resolve_override_func(override_system_f, self.f)
+
+        u = self._resolve_override_func(
+            override_system_u, self.u, System.default_u(input_names)
+        )
+
         if x0.shape != (len(state_names), 1):
             raise ValueError(
                 f"For states {state_names} x0 must have shape ({len(state_names)}, 1), got {x0.shape}"
@@ -389,30 +398,12 @@ class System(SafeIO):
 
         t_linspace = self._standardize_time_input_to_linspace(t_vector, t_span, dt)
 
-        # Override methods
-        if override_system_f is False:
-            f = self.f
-        elif override_system_f is None:
-            raise TypeError("override_system_f cannot be None!")
-        else:
-            f = self._validate_func_signature(override_system_f)
-
-        if override_system_u is False:
-            u = self.u
-        elif override_system_u is None:
-            u = System.default_u
-        else:
-            u = self._validate_func_signature(override_system_u)
-
-        if override_system_Q is False:
-            Q = self.Q
-        elif override_system_Q is None:
-            Q = self.zero_process_noise
-        else:
-            Q = self._validate_func_signature(override_system_Q)
+        Q = self._resolve_override_func(
+            override_system_Q, self.Q, System.zero_Q(state_names)
+        )
 
         if self.system_type in {"cti", "ctv"}:
-            return self._simulate_states_continuous(
+            X, T = self._simulate_states_continuous(
                 x0=x0,
                 f=f,
                 u=u,
@@ -423,7 +414,7 @@ class System(SafeIO):
             )
 
         elif self.system_type in {"dti", "dtv"}:
-            return self._simulate_states_discrete(
+            X, T = self._simulate_states_discrete(
                 x0=x0,
                 f=f,
                 u=u,
@@ -433,19 +424,29 @@ class System(SafeIO):
                 t_linspace=t_linspace,
             )
 
+        if output_df:
+            X_df = pd.DataFrame(X.T, index=T, columns=state_names)
+            X_df.index.name = "time"
+            return X_df
+        else:
+            return X, T
+
     def simulate_measurements(
         self,
         *,
-        X: NDArray,
+        X: Optional[NDArray] = None,
         t_span: Optional[tuple[float, float]] = None,
         dt: Optional[float] = None,
         t_vector: Optional[NDArray] = None,
+        X_df: Optional[pd.DataFrame] = None,
+        input_df: Optional[bool] = False,
+        output_df: Optional[bool] = False,
         override_system_u: Union[Callable, None, bool] = False,
         override_system_h: Union[Callable, None, bool] = False,
         override_system_R: Union[Callable, None, bool] = False,
         override_system_input_names: Union[Sequence[str], bool] = False,
         override_system_measurement_names: Union[Sequence[str], bool] = False,
-    ) -> tuple[NDArray, NDArray]:
+    ) -> Union[pd.DataFrame, tuple[NDArray, NDArray]]:
         """
         Simulate the system's output measurements based on a known state trajectory.
 
@@ -543,57 +544,45 @@ class System(SafeIO):
 
         """
 
-        def return_overriden_params():
-            pass
+        # Convert from DataFrame if needed
+        if input_df:
+            if X_df is None:
+                raise ValueError("X_df must be provided when input_df=True")
+            T = X_df.index.to_numpy()
+            X = X_df.to_numpy().T  # shape (n_states, n_steps)
+        else:
+            if X is None:
+                raise ValueError("X must be provided when input_df=False")
+            if not isinstance(X, np.ndarray):
+                raise TypeError("X must be a NumPy array")
 
-        # Override attributes
-        measurement_names = (
-            self.measurement_names
-            if override_system_measurement_names is False
-            else self._validate_string_sequence(override_system_measurement_names)
+            T = self._standardize_time_input_to_linspace(t_vector, t_span, dt)
+            if X.shape[1] != len(T):
+                raise ValueError(
+                    f"X has {X.shape[1]} steps, but time vector has {len(T)} steps"
+                )
+
+        measurement_names = self._resolve_override_str_list(
+            override_system_measurement_names, self.measurement_names
         )
 
-        input_names = (
-            self.input_names
-            if override_system_input_names is False
-            else self._validate_string_sequence(override_system_input_names)
+        input_names = self._resolve_override_str_list(
+            override_system_input_names, self.input_names
         )
 
-        if X.ndim != 2:
-            raise ValueError("X must be a 2D array of shape (n_states, n_steps).")
+        h = self._resolve_override_func(override_system_h, self.h, System.default_h)
 
-        t_linspace = self._standardize_time_input_to_linspace(t_vector, t_span, dt)
+        u = self._resolve_override_func(
+            override_system_u, self.u, System.default_u(input_names)
+        )
 
-        if X.shape[1] != len(t_linspace):
-            raise ValueError("X and T must have the same number of time steps.")
-        # Override methods
-
-        h = self._resolve_override(override_system_h, self.h, System.default_h)
-
-        if override_system_h is False:
-            h = self.h
-        elif override_system_h is None:
-            h = System.default_h
-        else:
-            h = self._validate_func_signature(override_system_h)
-
-        if override_system_u is False:
-            u = self.u
-        elif override_system_u is None:
-            u = System.default_u
-        else:
-            u = self._validate_func_signature(override_system_u)
-
-        if override_system_R is False:
-            R = self.R
-        elif override_system_R is None:
-            R = self.zero_measurement_noise
-        else:
-            R = self._validate_func_signature(override_system_R)
+        R = self._resolve_override_func(
+            override_system_R, self.R, System.zero_R(measurement_names)
+        )
 
         Y = []
 
-        for k, t_k in enumerate(t_linspace):
+        for k, t_k in enumerate(T):
             x_k = X[:, k].reshape(-1, 1)
             u_k = self.smart_call(u, x=x_k, t=t_k, expected_shape=(len(input_names), 1))
             y_k = self.smart_call(
@@ -617,88 +606,15 @@ class System(SafeIO):
 
             Y.append(y_k.flatten())
 
-        return np.array(Y).T, t_linspace
+        if output_df:
+            Y_df = pd.DataFrame(np.array(Y), index=T, columns=measurement_names)
+            Y_df.index.name = "time"
+            return Y_df
+        else:
+            return np.array(Y).T, T
 
-    # Computations
-    def compute_empirical_jacobian_wrt_x(
-        self,
-        func: Callable,
-        epsilon: float = 1e-6,
-    ) -> Callable:
-        """
-        Return a closure that computes the Jacobian ∂f/∂x at a given (x, u, t).
-
-        Parameters
-        ----------
-        func : Callable
-            Function f(x, u, t) returning (n×1) ndarray
-
-        Returns
-        -------
-        Callable
-            A function (xk, uk, tk) -> (n×n) ndarray
-        """
-
-        def jacobian_x(xk: NDArray, uk: NDArray, tk: float) -> NDArray:
-            Jx, _ = self._compute_empirical_jacobian(func, xk, uk, tk, epsilon=epsilon)
-            return Jx
-
-        return jacobian_x
-
-    def compute_empirical_jacobian_wrt_u(
-        self,
-        func: Callable,
-        epsilon: float = 1e-6,
-    ) -> Callable:
-        """
-        Return a closure that computes the Jacobian ∂f/∂u at a given (x, u, t).
-
-        Parameters
-        ----------
-        func : Callable
-            Function f(x, u, t) returning (n×1) ndarray
-
-        Returns
-        -------
-        Callable
-            A function (xk, uk, tk) -> (n×m) ndarray
-        """
-
-        def jacobian_u(xk: NDArray, uk: NDArray, tk: float) -> NDArray:
-            _, Ju = self._compute_empirical_jacobian(func, xk, uk, tk, epsilon=epsilon)
-            return Ju
-
-        return jacobian_u
-
-    def compute_empirical_jacobian_wrt_t(
-        self,
-        func: Callable,
-        epsilon: float = 1e-6,
-    ) -> Callable:
-        """
-        Return a closure that computes the Jacobian ∂f/∂t at a given (x, u, t).
-
-        Parameters
-        ----------
-        func : Callable
-            Function f(x, u, t) returning (n×1) ndarray
-
-        Returns
-        -------
-        Callable
-            A function (xk, uk, tk) -> (n×1) ndarray
-        """
-
-        def jacobian_t(xk: NDArray, uk: NDArray, tk: float) -> NDArray:
-            _, _, Jt = self._compute_empirical_jacobian(
-                func, xk, uk, tk, epsilon=epsilon, include_dt=True
-            )
-            return Jt
-
-        return jacobian_t
-
-    def _compute_empirical_jacobian(
-        self,
+    def _matrix_jacobian_wrt_x_u_t(
+            self,
         func: Callable,
         xk: NDArray,
         uk: NDArray,
@@ -805,745 +721,82 @@ class System(SafeIO):
 
         return Jx, Ju
 
-    def compute_observability_matrix(
+
+    def compute_jacobian_wrt_x(
         self,
-        *,
-        x0: NDArray,
-        t_span: Optional[tuple[float, float]] = None,
-        dt: Optional[float] = None,
-        t_vector: Optional[NDArray] = None,
-        override_system_f: Union[Callable, None, bool] = False,
-        override_system_h: Union[Callable, None, bool] = False,
-        override_system_u: Union[Callable, None, bool] = False,
-        override_system_state_names: Union[Sequence[str], bool] = False,
-        override_system_input_names: Union[Sequence[str], bool] = False,
-        override_system_measurement_names: Union[Sequence[str], bool] = False,
-        override_system_Q: Union[Callable, None, bool] = False,
-        override_system_R: Union[Callable, None, bool] = False,
-        epsilon: float = 1e-5,
-    ) -> NDArray:
+        func: Callable,
+        epsilon: float = 1e-6,
+    ) -> Callable:
         """
-        Compute the empirical observability matrix by stacking finite differences
-        of the output trajectories with respect to each perturbed state.
+        Return a closure that computes the Jacobian ∂f/∂x at a given (x, u, t).
 
         Parameters
         ----------
-        x0 : NDArray
-            Initial state vector, shape (n, 1).
-        t_span : tuple[float, float], optional
-            Time interval [t0, tf] over which to simulate.
-        dt : float, optional
-            Time step used for simulations.
-        t_vector : NDArray, optional
-            Explicit time vector to override t_span/dt.
-        override_system_u : Callable or bool, optional
-            Control input function u(t), or False to use system default.
-        override_system_h : Callable or bool, optional
-            Measurement function h(x, u, t), or False to use system default.
-        override_system_input_names : Sequence[str] or bool, optional
-            Input names to override the system's input_names.
-        override_system_measurement_names : Sequence[str] or bool, optional
-            Measurement names to override the system's measurement_names.
-        epsilon : float
-            Perturbation magnitude for state deviations.
+        func : Callable
+            Function f(x, u, t) returning (n×1) ndarray
 
         Returns
         -------
-        O : NDArray
-            Empirical observability matrix of shape ((K * m), n)
-            where K is the number of time steps and m is the number of measurements.
+        Callable
+            A function (xk, uk, tk) -> (n×n) ndarray
         """
-        measurement_names = (
-            self.measurement_names
-            if override_system_measurement_names is False
-            else self._validate_string_sequence(override_system_measurement_names)
-        )
-        input_names = (
-            self.input_names
-            if override_system_input_names is False
-            else self._validate_string_sequence(override_system_input_names)
-        )
 
-        t_linspace = self._standardize_time_input_to_linspace(t_vector, t_span, dt)
-        n_states = len(self.state_names)
-        m_meas = len(measurement_names)
-        K = len(t_linspace)
+        def jacobian_x(xk: NDArray, uk: NDArray, tk: float) -> NDArray:
+            Jx, _ = self._matrix_jacobian_wrt_x_u_t(func, xk, uk, tk, epsilon=epsilon)
+            return Jx
 
-        # (K * m, n) matrix
-        O = np.zeros((K * m_meas, n_states))
+        return jacobian_x
 
-        for i in range(n_states):
-            ei = np.zeros_like(x0, dtype=float)
-            ei[i, 0] = epsilon
-            x_plus = x0 + ei
-            x_minus = x0 - ei
 
-            X_plus, _ = self.simulate_states(
-                x0=x_plus,
-                t_vector=t_linspace,
-                override_system_f=override_system_f,
-                override_system_u=override_system_u,
-                override_system_state_names=override_system_state_names,
-                override_system_input_names=override_system_input_names,
-                override_system_Q=override_system_Q,
-            )
-
-            X_minus, _ = self.simulate_states(
-                x0=x_minus,
-                t_vector=t_linspace,
-                override_system_f=override_system_f,
-                override_system_u=override_system_u,
-                override_system_state_names=override_system_state_names,
-                override_system_input_names=override_system_input_names,
-                override_system_Q=override_system_Q,
-            )
-
-            Y_plus, _ = self.simulate_measurements(
-                X=X_plus,
-                t_vector=t_linspace,
-                override_system_h=override_system_h,
-                override_system_u=override_system_u,
-                override_system_measurement_names=measurement_names,
-                override_system_input_names=input_names,
-                override_system_R=override_system_R,
-            )
-            Y_minus, _ = self.simulate_measurements(
-                X=X_minus,
-                t_vector=t_linspace,
-                override_system_h=override_system_h,
-                override_system_u=override_system_u,
-                override_system_measurement_names=measurement_names,
-                override_system_input_names=input_names,
-                override_system_R=override_system_R,
-            )
-
-            delta_Y = (Y_plus - Y_minus) / (2 * epsilon)  # shape (m, K)
-
-            # Reshape column-wise: [dy(t_0); dy(t_1); ...] ∈ ℝ^{K·m}
-            O[:, i] = delta_Y.T.flatten()
-
-        return O
-
-    def compute_observability_of_system_from_grammian(
+    def compute_jacobian_wrt_u(
         self,
-        *,
-        x0: NDArray,
-        t_span: Optional[tuple[float, float]] = None,
-        dt: Optional[float] = None,
-        t_vector: Optional[NDArray] = None,
-        override_system_u: Union[Callable, None, bool] = False,
-        override_system_h: Union[Callable, None, bool] = False,
-        override_system_input_names: Union[Sequence[str], bool] = False,
-        override_system_measurement_names: Union[Sequence[str], bool] = False,
-        epsilon: float = 1e-5,
-    ) -> NDArray:
-        r"""
-        Estimate the empirical observability Gramian using central finite differences
-        of the output trajectories with respect to state perturbations.
-
-        This captures the aggregate sensitivity of the output measurements to small
-        perturbations in each state, over a time window [t0, tf].
-
-        Empirical Gramian:
-            .. math::
-                W_O = \frac{1}{2\epsilon^2} \sum_{i=1}^n
-                    \int_{t_0}^{t_f} (y_i^+(t) - y_i^-(t))(y_i^+(t) - y_i^-(t))^\top dt
-
-        where :math:`y_i^+(t)` and :math:`y_i^-(t)` are the measurement trajectories
-        from initial conditions :math:`x_0 \pm \epsilon e_i`.
+        func: Callable,
+        epsilon: float = 1e-6,
+    ) -> Callable:
+        """
+        Return a closure that computes the Jacobian ∂f/∂u at a given (x, u, t).
 
         Parameters
         ----------
-        h : Callable
-            Measurement function h(x, u, t), returning (m, 1) array.
-        x0 : NDArray
-            Initial state vector, shape (n, 1).
-        u : Callable
-            Input function u(t) returning (m, 1).
-        t_span : tuple[float, float]
-            Time interval [t0, tf] over which to simulate.
-        dt : float
-            Time step used for simulations.
-        epsilon : float, optional
-            Perturbation magnitude for state deviations.
+        func : Callable
+            Function f(x, u, t) returning (n×1) ndarray
 
         Returns
         -------
-        W : NDArray
-            Empirical observability Gramian, shape (n, n).
-
-        Examples
-        --------
-        >>> x0 = np.array([[1.0], [0.0]])
-        >>> observer = Observer()  # Must provide .simulate_measurements
-        >>> W.shape
-        (2, 2)
+        Callable
+            A function (xk, uk, tk) -> (n×m) ndarray
         """
 
-        O = self.compute_observability_matrix(
-            x0=x0,
-            t_span=t_span,
-            dt=dt,
-            t_vector=t_vector,
-            override_system_u=override_system_u,
-            override_system_h=override_system_h,
-            override_system_input_names=override_system_input_names,
-            override_system_measurement_names=override_system_measurement_names,
-            epsilon=epsilon,
-        )
-        return O.T @ O
+        def jacobian_u(xk: NDArray, uk: NDArray, tk: float) -> NDArray:
+            _, Ju = self._matrix_jacobian_wrt_x_u_t(func, xk, uk, tk, epsilon=epsilon)
+            return Ju
 
-    def compute_CRB_of_system_from_grammian(self, W: NDArray) -> dict[str, float]:
-        """
-        Compute the Cramér-Rao Bound (CRB) diagonal values for each state
-        from the observability Gramian.
+        return jacobian_u
 
-        Parameters
-        ----------
-        W : NDArray
-            Empirical observability Gramian, shape (n, n)
 
-        Returns
-        -------
-        dict[str, float]
-            Dictionary mapping state name → CRB diagonal value (scalar).
-        """
-        ridge = 1e-5  # regularization for numerical stability
-        CRB = np.linalg.inv(W + ridge * np.eye(W.shape[0]))
-        return dict(zip(self.state_names, np.diag(CRB)))
-
-    def compute_observability_of_states_from_grammian_nullspace(
+    def compute_jacobian_wrt_t(
         self,
-        *,
-        W: NDArray,
-        tol: float = 1e-10,
-    ) -> dict[str, float]:
+        func: Callable,
+        epsilon: float = 1e-6,
+    ) -> Callable:
         """
-        Compute per-state observability indices using the nullspace projection method.
+        Return a closure that computes the Jacobian ∂f/∂t at a given (x, u, t).
 
         Parameters
         ----------
-        W : NDArray
-            Empirical observability Gramian, shape (n, n).
-        state_names : list of str, optional
-            Optional list of state variable names. Defaults to x0, x1, ..., xn-1.
-        tol : float
-            Threshold below which eigenvalues are considered "zero" (nullspace).
+        func : Callable
+            Function f(x, u, t) returning (n×1) ndarray
 
         Returns
         -------
-        dict[str, float]
-            Dictionary mapping state name to observability index ∈ [0, 1].
-
-        W = observer.compute_empirical_observability_grammian(x0, t_span=(0, 10), dt=0.1)
-        obs_idx = compute_state_observability_indices(W, state_names=system.state_names)
-        print(obs_idx)
-        {'position': 0.98, 'velocity': 0.12, 'bias': 0.001}
-
+        Callable
+            A function (xk, uk, tk) -> (n×1) ndarray
         """
-        n = W.shape[0]
-        eigvals, eigvecs = np.linalg.eigh(W)
 
-        # Identify eigenvectors corresponding to (near-)nullspace
-        nullspace_mask = eigvals < tol
-        null_vectors = eigvecs[:, nullspace_mask]  # shape (n, r)
-
-        state_names = self.state_names
-
-        indices = {}
-        for j in range(n):
-            e_j = np.zeros((n, 1))
-            e_j[j, 0] = 1.0
-            proj = null_vectors.T @ e_j  # shape (r, 1)
-            norm2 = np.sum(proj**2)  # squared projection
-            indices[state_names[j]] = float(1.0 - norm2)
-
-        return indices
-
-    def compute_observability_of_states_over_time_from_metric(
-        self,
-        *,
-        x0: NDArray,
-        observability_metric_of_states: Callable,
-        t_span: Optional[tuple[float, float]] = None,
-        dt: Optional[float] = None,
-        t_vector: Optional[NDArray] = None,
-        divide_time_into_k_windows: Optional[int] = None,
-        window_length_in_points: Optional[int] = None,
-        window_length_in_time: Optional[float] = None,
-        overlap_points_between_windows: Optional[int] = None,
-        overlap_time_between_windows: Optional[float] = None,
-    ):
-        t_linspace = self._standardize_time_input_to_linspace(t_vector, t_span, dt)
-        list_of_t_windows = self._standardize_make_time_windows(
-            t_linspace,
-            divide_time_into_k_windows=divide_time_into_k_windows,
-            window_length_in_points=window_length_in_points,
-            window_length_in_time=window_length_in_time,
-            overlap_points_between_windows=overlap_points_between_windows,
-            overlap_time_between_windows=overlap_time_between_windows,
-        )
-
-        scores_over_time = []
-        for window_t in list_of_t_windows:
-            scores = observability_metric_of_states(x0=x0, t_vector=window_t)
-            scores_over_time.append(scores)
-
-        return scores_over_time, list_of_t_windows
-
-    def compute_eigenvalues_of_observability_of_system_metric():
-        pass
-
-    def compute_CN_of_observability_of_system_metric():
-        pass
-
-    def compute_observability_of_system_from_CRLB():
-        pass
-
-    def compute_observability_of_states_from_CRLB():
-        pass
-
-    def compute_observability_of_states_from_P(
-        self,
-        *,
-        P_series: pd.Series,
-        t_eval: float,
-        normalize: bool = True,
-        clip: bool = True,
-        override_system_state_names: Union[Sequence[str], bool] = False,
-        eps: float = 1e-12,
-    ) -> dict[str, float]:
-        """
-        Compute stochastic observability scores per state from the posterior covariance
-        matrix P(t), using the inverse diagonal method from Ramos et al. (2021).
-
-        Parameters
-        ----------
-        P_series : pd.Series
-            A time-indexed Series of (n x n) covariance matrices from a Kalman filter run.
-        t_eval : float
-            Time at which to evaluate the observability scores.
-        normalize : bool, default True
-            Whether to normalize scores so they sum to 1.
-        clip : bool, default True
-            Whether to clip scores to [0, 1] after normalization.
-        eps : float, default 1e-12
-            Small constant to prevent division by zero.
-
-        Returns
-        -------
-        dict[str, float]
-            Mapping from state name to stochastic observability score.
-        """
-        if not isinstance(P_series, pd.Series):
-            raise TypeError("P_series must be a pandas Series indexed by time")
-
-        try:
-            t_closest = P_series.index.get_indexer([t_eval], method="nearest")[0]
-        except Exception as e:
-            raise ValueError(f"Failed to locate nearest time to t={t_eval}: {e}")
-
-        P = P_series.iloc[t_closest]
-
-        if not isinstance(P, np.ndarray) or P.ndim != 2 or P.shape[0] != P.shape[1]:
-            raise ValueError("Each value in P_series must be a square NumPy array")
-
-        diag = np.diag(P)
-        inv_diag = 1.0 / (diag + eps)  # avoid div by zero
-
-        if normalize:
-            inv_diag = inv_diag / np.sum(inv_diag)
-
-        if clip:
-            inv_diag = np.clip(inv_diag, 0.0, 1.0)
-
-        state_names = (
-            self.state_names
-            if override_system_state_names is False
-            else self._validate_string_sequence(override_system_state_names)
-        )
-
-        if len(inv_diag) != len(state_names):
-            raise ValueError(
-                "Length of P diagonal does not match number of state names"
+        def jacobian_t(xk: NDArray, uk: NDArray, tk: float) -> NDArray:
+            _, _, Jt = self._matrix_jacobian_wrt_x_u_t(
+                func, xk, uk, tk, epsilon=epsilon, include_dt=True
             )
+            return Jt
 
-        return dict(zip(self.state_names, inv_diag))
-
-    def compute_error_pointwise(
-        self,
-        truedf: pd.DataFrame,
-        estdf: pd.DataFrame,
-    ) -> pd.DataFrame:
-        """
-        Compute pointwise RMSE, MAE, and MaxErr between true and estimated states.
-
-        Parameters
-        ----------
-        truedf : pd.DataFrame
-            Ground truth state values.
-        estdf : pd.DataFrame
-            Estimated state values.
-
-        Returns
-        -------
-        pd.DataFrame
-            DataFrame with columns ['RMSE', 'MAE', 'MaxErr'].
-
-        Examples
-        --------
-        >>> truedf = pd.DataFrame({'x0': [1.0, 2.0], 'x1': [1.0, 3.0]}, index=[0.0, 1.0])
-        >>> estdf = pd.DataFrame({'x0': [1.1, 1.9], 'x1': [0.9, 3.2]}, index=[0.0, 1.0])
-        >>> from pykal.utils.utils_computation import Error
-        >>> Error.compute_pointwise_error_metrics(truedf, estdf).round(2)
-              RMSE  MAE  MaxErr
-        0.0  0.10  0.10     0.1
-        1.0  0.16  0.15     0.2
-        """
-        if not truedf.index.equals(estdf.index):
-            raise ValueError("Indices of true and estimated DataFrames must match.")
-
-        errors = (estdf[truedf.columns] - truedf).values  # shape (T, n)
-
-        rmse = np.sqrt(np.mean(errors**2, axis=1))
-        mae = np.mean(np.abs(errors), axis=1)
-        maxerr = np.max(np.abs(errors), axis=1)
-
-        return pd.DataFrame(
-            {"RMSE": rmse, "MAE": mae, "MaxErr": maxerr}, index=truedf.index
-        )
-
-    def compute_error_nees(
-        self,
-        truedf: pd.DataFrame,
-        estdf: pd.DataFrame,
-        P_seq: pd.Series,
-        tol: float = 1e-9,
-    ) -> pd.Series:
-        """
-        Compute the Normalized Estimation Error Squared (NEES) over time.
-
-        Parameters
-        ----------
-        truedf : pd.DataFrame
-            True state values indexed by time.
-        estdf : pd.DataFrame
-            Estimated state values indexed by time.
-        P_seq : pd.Series of np.ndarray
-            Covariance matrices (n × n), one per time step, indexed by time.
-        tol : float, optional
-            Small diagonal regularization added to P_k for numerical stability.
-
-        Returns
-        -------
-        pd.Series
-            NEES values indexed by time.
-
-        Raises
-        ------
-        ValueError
-            If indices do not match or if P_seq entries are not 2D arrays.
-
-        Examples
-        --------
-        >>> import pandas as pd
-        >>> from pykal.utils.utils_computation import Error
-        >>> truedf = pd.DataFrame({'x0': [1.0], 'x1': [1.0]}, index=[0.0])
-        >>> estdf = pd.DataFrame({'x0': [1.1], 'x1': [0.9]}, index=[0.0])
-        >>> P_seq = pd.Series({0.0: 0.1 * np.eye(2)})
-        >>> Error.compute_nees_only(truedf, estdf, P_seq).round(2)
-        0.0    0.2
-        Name: NEES, dtype: float64
-        """
-        if not isinstance(P_seq, pd.Series):
-            raise TypeError("P_seq must be a pandas Series of covariance matrices.")
-
-        if not truedf.index.equals(estdf.index) or not truedf.index.equals(P_seq.index):
-            raise ValueError("Indices of truedf, estdf, and P_seq must all match.")
-
-        nees_values = []
-
-        for t in truedf.index:
-            x_true = truedf.loc[t].values.reshape(-1, 1)
-            x_est = estdf.loc[t].values.reshape(-1, 1)
-            e_k = x_est - x_true
-
-            P_k = P_seq.loc[t]
-            if not isinstance(P_k, np.ndarray) or P_k.ndim != 2:
-                raise ValueError(f"P_seq[{t}] must be a 2D NumPy array.")
-
-            P_k_reg = P_k + tol * np.eye(P_k.shape[0])
-
-            try:
-                nees_k = float(e_k.T @ np.linalg.inv(P_k_reg) @ e_k)
-            except np.linalg.LinAlgError:
-                nees_k = np.nan
-
-            nees_values.append(nees_k)
-
-        return pd.Series(nees_values, index=truedf.index, name="NEES")
-
-    def compute_error_nll(
-        self,
-        truedf: pd.DataFrame,
-        estdf: pd.DataFrame,
-        P_seq: pd.Series,
-        tol: float = 1e-9,
-    ) -> pd.Series:
-        """
-        Compute the Negative Log-Likelihood (NLL) over time under Gaussian assumption.
-
-        Parameters
-        ----------
-        truedf : pd.DataFrame
-            True state values.
-        estdf : pd.DataFrame
-            Estimated state values.
-        P_seq : pd.Series of np.ndarray
-            Covariance matrices per timestep.
-        tol : float, optional
-            Diagonal regularization.
-
-        Returns
-        -------
-        pd.Series
-            Negative log-likelihood values indexed by time.
-
-        Examples
-        --------
-        >>> import pandas as pd
-        >>> import numpy as np
-        >>> from pykal.utils.utils_computation import Error
-        >>> truedf = pd.DataFrame({'x0': [1.0], 'x1': [2.0]}, index=[0.0])
-        >>> estdf = pd.DataFrame({'x0': [1.1], 'x1': [1.9]}, index=[0.0])
-        >>> P_seq = pd.Series({0.0: 0.1 * np.eye(2)})
-        >>> Error.compute_nll(truedf, estdf, P_seq).round(2)
-        0.0    -0.36
-        Name: NLL, dtype: float64
-        """
-        if not truedf.index.equals(estdf.index) or not truedf.index.equals(P_seq.index):
-            raise ValueError("Indices must match for truedf, estdf, and P_seq.")
-
-        nll_vals = []
-
-        for t in truedf.index:
-            x_true = truedf.loc[t].values.reshape(-1, 1)
-            x_est = estdf.loc[t].values.reshape(-1, 1)
-            e_k = x_est - x_true
-            P_k = P_seq.loc[t] + tol * np.eye(len(e_k))
-
-            try:
-                inv_P = np.linalg.inv(P_k)
-                nees_k = float(e_k.T @ inv_P @ e_k)
-                logdet = np.linalg.slogdet(2 * np.pi * P_k)[1]
-                nll_k = 0.5 * (logdet + nees_k)
-            except np.linalg.LinAlgError:
-                nll_k = np.nan
-
-            nll_vals.append(nll_k)
-
-        return pd.Series(nll_vals, index=truedf.index, name="NLL")
-
-    def compute_error_mse_per_state(
-        self, truedf: pd.DataFrame, estdf: pd.DataFrame
-    ) -> pd.Series:
-        """
-        Compute mean squared error per state over all time steps.
-
-        Returns
-        -------
-        pd.Series
-            MSE per state (averaged over time).
-
-        Examples
-        --------
-        >>> import pandas as pd
-        >>> from pykal.utils.utils_computation import Error
-        >>> truedf = pd.DataFrame({'x0': [1.0, 2.0], 'x1': [2.0, 4.0]}, index=[0.0, 1.0])
-        >>> estdf = pd.DataFrame({'x0': [1.1, 1.9], 'x1': [2.1, 3.8]}, index=[0.0, 1.0])
-        >>> Error.compute_mse_per_state(truedf, estdf).round(4)
-        x0    0.010
-        x1    0.025
-        dtype: float64
-        """
-        if not truedf.index.equals(estdf.index):
-            raise ValueError("Indices must match.")
-
-        diff = estdf[truedf.columns] - truedf
-        return (diff**2).mean()
-
-    @staticmethod
-    def combine_data_and_time_into_DataFrame(
-        data: NDArray, time: NDArray, column_names: List[str]
-    ) -> pd.DataFrame:
-        """
-        Combine a 2D data array and a 1D time array into a pandas DataFrame.
-
-        Parameters
-        ----------
-        data : NDArray
-            Array of shape (n_variables, n_time_steps).
-        time : NDArray
-            Array of shape (n_time_steps,) or (n_time_steps, 1).
-        column_names : list
-            List of length n_variables giving column names for the data.
-
-        Returns
-        -------
-        df : pd.DataFrame
-            A DataFrame with time as the index and variable names as columns.
-
-        Raises
-        ------
-        ValueError
-            If shapes of data, time, or column_names are incompatible.
-        TypeError
-            If input types are incorrect.
-
-        Examples
-        --------
-        >>> data = np.array([[1.0, 2.0, 3.0], [10.0, 20.0, 30.0]])
-        >>> time = np.array([0.1, 0.2, 0.3])
-        >>> column_names = ["x0", "x1"]
-        >>> df = SystemIO.combine_data_and_time_into_DataFrame(data, time, column_names)
-        >>> df
-              x0    x1
-        time
-        0.1   1.0  10.0
-        0.2   2.0  20.0
-        0.3   3.0  30.0
-
-        >>> bad_data = np.array([1.0, 2.0, 3.0])
-        >>> SystemIO.combine_data_and_time_into_DataFrame(bad_data, time, column_names)
-        Traceback (most recent call last):
-            ...
-        ValueError: `data` must be a 2D array, got shape (3,).
-
-        >>> time_wrong = np.array([0.1, 0.2])
-        >>> SystemIO.combine_data_and_time_into_DataFrame(data, time_wrong, column_names)
-        Traceback (most recent call last):
-            ...
-        ValueError: Time length 2 does not match number of time steps in data 3.
-
-        >>> bad_names = ["x0"]
-        >>> SystemIO.combine_data_and_time_into_DataFrame(data, time, bad_names)
-        Traceback (most recent call last):
-            ...
-        ValueError: Length of column_names (1) does not match number of variables in data (2).
-
-        >>> not_a_list = "x0,x1"
-        >>> SystemIO.combine_data_and_time_into_DataFrame(data, time, not_a_list)
-        Traceback (most recent call last):
-            ...
-        TypeError: `column_names` must be a list, got <class 'str'>
-
-        >>> time_matrix = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]])
-        >>> SystemIO.combine_data_and_time_into_DataFrame(data, time_matrix, column_names)
-        Traceback (most recent call last):
-            ...
-        ValueError: `time` should be of shape (n_steps,) or (n_steps, 1), got (2, 3).
-
-        >>> SystemIO.combine_data_and_time_into_DataFrame(data, time, tuple(column_names))
-        Traceback (most recent call last):
-            ...
-        TypeError: `column_names` must be a list, got <class 'tuple'>
-
-        """
-
-        if not isinstance(data, np.ndarray):
-            raise TypeError(f"`data` must be an np.ndarray, got {type(data)}")
-        if not isinstance(time, np.ndarray):
-            raise TypeError(f"`time` must be an np.ndarray, got {type(time)}")
-        if not isinstance(column_names, list):
-            raise TypeError(f"`column_names` must be a list, got {type(column_names)}")
-
-        if data.ndim != 2:
-            raise ValueError(f"`data` must be a 2D array, got shape {data.shape}.")
-
-        n_vars, n_steps = data.shape
-
-        if time.ndim == 2:
-            if time.shape[1] != 1:
-                raise ValueError(
-                    f"`time` should be of shape (n_steps,) or (n_steps, 1), got {time.shape}."
-                )
-            time = time.flatten()
-        elif time.ndim != 1:
-            raise ValueError(
-                f"`time` must be 1D or 2D with one column, got shape {time.shape}."
-            )
-
-        if time.shape[0] != n_steps:
-            raise ValueError(
-                f"Time length {time.shape[0]} does not match number of time steps in data {n_steps}."
-            )
-
-        if len(column_names) != n_vars:
-            raise ValueError(
-                f"Length of column_names ({len(column_names)}) does not match number of variables in data ({n_vars})."
-            )
-
-        df = pd.DataFrame(data.T, index=time, columns=column_names)
-        df.index.name = "time"
-        return df
-
-    @staticmethod
-    def combine_matrix_series_with_time(data: NDArray, time: NDArray) -> pd.Series:
-        """
-        Combine a 3D array (n x n x m) with a 1D or (m, 1) time array into a pd.Series
-        indexed by time, where each entry is an (n x n) array.
-
-        Parameters
-        ----------
-        data : NDArray
-            Array of shape (n, n, m), representing a time-indexed matrix series.
-        time : NDArray
-            Time array of shape (m,) or (m, 1) matching the third dimension of `data`.
-
-        Returns
-        -------
-        pd.Series
-            A Series indexed by time with each element being an (n x n) NDArray.
-
-        Raises
-        ------
-        ValueError
-            If data is not 3D or time shape is incompatible.
-
-        Examples
-        --------
-        >>> covariances = np.stack([np.eye(2), 2 * np.eye(2), 3 * np.eye(2)], axis=2)
-        >>> time = np.array([0.0, 1.0, 2.0])
-        >>> series = SystemIO.combine_matrix_series_with_time(covariances, time)
-        >>> series.iloc[0]
-        array([[1., 0.],
-               [0., 1.]])
-        """
-        if not isinstance(data, np.ndarray):
-            raise TypeError(f"`data` must be a NumPy array, got {type(data)}")
-        if data.ndim != 3:
-            raise ValueError(
-                f"`data` must be a 3D array of shape (n, n, m), got shape {data.shape}"
-            )
-
-        n1, n2, m = data.shape
-        if n1 != n2:
-            raise ValueError(
-                f"`data` must be square in the first two dimensions, got shape ({n1}, {n2}, {m})"
-            )
-
-        if not isinstance(time, np.ndarray):
-            raise TypeError(f"`time` must be a NumPy array, got {type(time)}")
-        if time.ndim == 2 and time.shape[1] == 1:
-            time = time.flatten()
-        elif time.ndim != 1:
-            raise ValueError(
-                f"`time` must be a 1D array or shape (m, 1), got shape {time.shape}"
-            )
-
-        if len(time) != m:
-            raise ValueError(
-                f"Length of `time` ({len(time)}) does not match number of matrices ({m})"
-            )
-
-        return pd.Series({t: data[:, :, i] for i, t in enumerate(time)})
+        return jacobian_t        
