@@ -1,0 +1,304 @@
+#+TITLE: Creating a Dyamical System
+#+PROPERTY: header-args:python :session dynamical_system :results output :exports both
+* Initializing a Dynamical System
+** The State-Space Model
+Consider a continuous-time dynamical system e.g. a swinging pendulum, a plucked guitar string, a running car and so forth. Recall that the state-space model of such a system is given by
+
+.. math::
+
+   \begin{aligned}
+   \dot{x} &= f(x,\,u,\,t) + w(t) \\
+   y &= h(x,\,u,\,t) + r(t) 
+   \end{aligned}
+
+where :math:`x \in \mathbb{R}^{n}` is the **state vector**, :math:`u \in \mathbb{R}^{p}` is the **input vector**, :math:`t \in \mathbb{R}^{+}` is **time**, and :math:`w` is a random variable referred to as **process noise** with :math:`w(t) \in \mathbb{R}^{n}` distributed as :math:`w \sim \mathcal{N}(0,\,Q(t))`, where :math:`Q(t) \in \mathcal{M}_{n}(\mathbb{R})` is the positive semidefinite **process noise covariance matrix**. Similarly, :math:`y \in \mathbb{R}^{m}` is the **measurement vector** and :math:`r` is a random variable referred to as **measurement noise** with  :math:`r(t) \in \mathbb{R}^{m}` distributed as :math:`r \sim \mathcal{N}(0,\,R(t))`, where :math:`R(t) \in \mathcal{M}_{m}(\mathbb{R})` is the positive semidefinite **measurement noise covariance matrix**.
+
+The vector space \( X ⊆ \mathbb{R}^{n} \) is the **state-space**, the vector space \( Y \subseteq \mathbb{R}^{m} \) is the **measurement-space**, the vector space \( U \subseteq \mathbb{R}^{p} \) is the **input-space**, and the space \( T \subseteq \mathbb{R}^{+} \) is the time-space. The random variables are elements of the appropriate  Hilbert spaces. Recall that the derivitive is a linear operator \( \frac{d}{dt}: X \rightarrow X \); accordingly, the function \( f: X \times U \times T \rightarrow X\) is known as the **process dynamics**. Similarly, \( h:X \times U \times T \rightarrow Y \) is the **measurement dynamics **.
+
+** The System Class
+Such a model lends itself well to an Object-Oriented representation. For ease of implementation, we define an **input function** function \( u: T \rightarrow U \) to generate input vectors, and the random variables \( w \) and \( t \) are generated from \( Q \) and \( R \), respectively. Recall that \( Q: T \rightarrow \mathcal{M}_{n}(\mathbb{R}) \) and \( R: T \rightarrow \mathcal{M}_{m}(\mathbb{R}) \). We may then define a `System` class which encapsulates the process dynamics (f), the measurement_dynamics (h), the input (u), the process noise (from Q), and the measurement noise (R). Every instance of the 'System' class encapsualtes a new system, and with the exception of "metadata" such as the state names and measurement names and so on, each instance of 'System' encapsualtes behaviour, not data.
+
+These are the minimal functions needed to model a dynamical system. A full list of relevant System methods and attributes is shown below. 
+
+#+begin_src python
+  System.f # process dynamics
+  System.h # measurement dynamics 
+  System.u # input function 
+  System.Q # process noise covariance 
+  System.R # measurement noise covariance 
+#+end_src
+
+#+RESULTS:
+
+#+begin_src python
+System.state_names
+System.measurement_names
+System.input_names  
+#+end_src
+
+#+RESULTS:
+
+** Simulating State Trajectories
+An illustrative example. First, we import necessary libraries and modules. 
+
+#+begin_src python :results silent
+  from pykal.system import System
+  import numpy as np
+  from numpy.typing import NDArray
+  import matplotlib.pyplot as plt
+#+end_src
+
+We wish to create a simple Harmonic oscillator. We proceed as follows:
+
+#+begin_src python :results silent
+  def f(x: NDArray) -> NDArray:
+      return np.array([[x[1, 0]], [-x[0, 0]]])  # Harmonic oscillator
+
+  sys = System(f=f, state_names=["x0", "x1"], system_type="cti")
+#+end_src
+
+By default,
+- `sys.h` is the identity function (ie. it returns the full unaltered state) and `sys.measurement_names = state_names`
+- 'sys.u' returns a zero-valued vector in \( \mathbb{R}^{1} \) and 'sys.input_names = []' (an empty list)
+- `Q` and `R` return low-noise square matrices of dimension 'sys.state_names' and 'sys.measurement_names' 
+
+We can now simulate the trajectory of the states by specifying an initial condition `x0`, a time span 't_span', and a time step `dt`. 
+
+#+begin_src python :results silent
+  x0 = np.array([[1.0], [0.0]])
+  X, T = sys.simulate_states(x0=x0, dt=0.1, t_span=(0, 10)) # X is (n_states,n_timesteps), T is (n_timesteps,)
+  X_df = sys.combine_data_and_time_into_DataFrame(X, T, sys.state_names) # X_df is (n_timesteps,n_states)
+  print(X_df.head())  
+#+end_src
+
+We  plot the result, leveraging the pandas DF plotting utilitie:
+
+#+begin_src python :results file
+  ax = X_df.plot(title="State Trajectories", xlabel="Time", ylabel="State Value", figsize=(8, 4))
+  ax.grid(True)
+  path = "./images/Linear_Damped_SHO.png"
+  plt.savefig(path)
+  print(path)
+#+end_src
+
+#+RESULTS:
+[[file:./images/Linear_Damped_SHO.png]]
+
+But now suppose we want to account for unmodeled dynamics or specificed uncertainty in our model. We can define an appropriate Q and update the sys.Q attribute.
+
+** Adding Process Noise
+Suppose we want to account for unmodeled dynamics or uncertainty using a process noise model `Q`.
+
+#+begin_src python :results silent
+  def test_Q(x: NDArray, u: NDArray, t: float) -> NDArray:
+      return 0.01 * np.eye(2)
+
+  sys.Q = test_Q
+  X, T = sys.simulate_states(x0=x0, dt=0.1, t_span=(0, 10))
+  X_df = sys.combine_data_and_time_into_DataFrame(X, T, sys.state_names)
+#+end_src
+
+
+If we don't want to update the system Q quite, for example if we are unsure what it is, we can pass an override_system_Q keyword argument to our simulation function, which will use the supplied :
+
+#+begin_src python
+  X, T = sys.simulate_states(x0=x0, dt=0.1, t_span=(0, 10), override_system_Q=test_Q)  
+#+end_src
+
+#+RESULTS:
+
+This override behavior works for `f`, `u`, and `Q`:
+- `None` disables that function (i.e.. disables noise or input)
+- `Callable` uses the function temporarily
+- `False` uses the default system function (default)
+
+This allows testing different scenarios without redefining the `System` object each time.
+
+** Adding Inputs 
+Let us now test our system with an input function, that is,  a **driven harmonic oscillator**. This will require us to rewrite f as
+
+#+begin_src python
+  def driven_SHO(
+      x: NDArray[np.float64],
+      u: NDArray[np.float64],
+      damping_term: float = 0.1,
+      stiffness: float = 2.0,
+  ) -> NDArray[np.float64]:
+      x0, x1 = x[0, 0], x[1, 0]
+      u_val = u[0, 0]
+      dx0 = x1
+      dx1 = -stiffness * x0 - damping_term * x1 + u_val
+      return np.array([[dx0], [dx1]], dtype=np.float64)
+#+end_src
+
+#+RESULTS:
+
+Note that we added extra kwargs as well. We now define a constant forcing function:
+
+#+begin_src python
+  def u_constant(t: float, constant_u=[10.0]) -> NDArray[np.float64]:
+      return np.array(constant_u, dtype=np.float64).reshape(-1, 1)
+#+end_src
+
+#+RESULTS:
+
+We now have 
+#+begin_src python
+    X, T = sys.simulate_states(x0=x0, dt=0.1, t_span=(0, 10), override_system_f=driven_SHO, override_system_Q=test_Q, override_system_u=u_constant, override_system_input_names=["force"])
+#+end_src
+
+#+RESULTS:
+
+Note that we are overriding the system_inputz_names as well for consistenc. If we want to change the stiffness or damping term for exploration, we can either change the defaults in our definition, or use a closure:
+
+#+begin_src python
+  from typing import Callable
+
+
+  def driven_SHO_with_params(
+      damping_term: float = 0.1,
+      stiffness: float = 2.0,
+  ) -> Callable:
+      def driven_SHO(
+          x: NDArray[np.float64],
+          u: NDArray[np.float64],
+      ) -> NDArray[np.float64]:
+          x0, x1 = x[0, 0], x[1, 0]
+          u_val = u[0, 0]
+          dx0 = x1
+          dx1 = -stiffness * x0 - damping_term * x1 + u_val
+          return np.array([[dx0], [dx1]], dtype=np.float64)
+
+      return driven_SHO
+
+
+  X, T = sys.simulate_states(
+      x0=x0,
+      dt=0.1,
+      t_span=(0, 10),
+      override_system_f=driven_SHO,
+      override_system_Q=test_Q,
+      override_system_u=u_constant,
+      override_system_input_names=["force"],
+  )
+  X_df = sys.combine_data_and_time_into_DataFrame(X, T, sys.state_names)
+#+end_src
+
+#+RESULTS:
+
+We now visualize our data. 
+#+begin_src python :results file
+  ax = X_df.plot(
+      title="Input-Driven State Trajectories", xlabel="Time", ylabel="State Value", figsize=(8, 4)
+  )
+  ax.grid(True)
+
+  path = "./images/Input_Driven_SHO.png"
+  plt.savefig(path)
+  print(path)
+#+end_src
+
+#+RESULTS:
+[[file:./images/Input_Driven_SHO.png]]
+
+
+If we decide that this should be our new system, we simply update our system attributes:
+#+begin_src python
+  sys.f = driven_SHO
+  sys.u = u_constant
+  sys.input_names = ["force"]  
+  sys.Q = test_Q
+#+end_src
+
+#+RESULTS:
+
+We now have this updated system we can play with. Feel the power, Kronk. 
+
+** Simulating Measurements
+We simulate our system above to have state trajectories we can measure:
+   #+begin_src python
+     X_true, TX = sys.simulate_states(x0=x0, dt=0.1, t_span=(0, 10)) 
+   #+end_src
+
+   #+RESULTS:
+
+and then simulate measurements:
+   #+begin_src python
+     Y, TY = sys.simulate_measurements(X=X, T=TX)
+     Y_df = sys.combine_data_and_time_into_DataFrame(Y,TY,sys.measurement_names)
+   #+end_src
+
+   #+RESULTS:
+
+By default, `System` uses the identity function for measurements:
+
+.. math::
+
+   y = h(x, u, t) + r(t) = x + r(t)
+
+So we should not be surprised by the following plot:
+
+#+begin_src python :results file
+  ax = X_df.plot(
+      title="True vs Measured State Values ", xlabel="Time", ylabel="State Value", figsize=(8, 4)
+  )
+  ax.grid(True)  
+  Y_df.plot(ax=ax, style="x")
+
+  ax.legend()
+
+  path = "./images/truevsmeasured.png"
+  plt.savefig(path)
+  print(path)
+#+end_src
+
+#+RESULTS:
+[[file:./images/truevsmeasured.png]]
+
+** Adding a Sensor with Measurement Noise 
+If we want to simulate sensor readings (e.g. only position), we can need to define a custom `h` and `R`. We follow a prototyping process similar to when we deterined our process dynamics and process noise. Let’s assume we only observe position with some additive Gaussian noise.
+
+#+begin_src python :results silent
+  def position_sensor(x: NDArray, u: NDArray, t: float) -> NDArray:
+      """Only measure position."""
+      return np.array([[x[0, 0]]])  # shape (1, 1)
+
+  def test_R(x: NDArray, u: NDArray, t: float) -> NDArray:
+      """Constant measurement noise: variance = 0.05^2"""
+      return 0.25 * np.eye(1)  # shape (1, 1)
+
+  Y, TY = sys.simulate_measurements(X=X, T=TX, override_system_h = position_sensor,override_system_R=test_R,override_system_measurement_names=["x0"])
+  Y_df = sys.combine_data_and_time_into_DataFrame(Y,TY,["x0"])  
+#+end_src
+
+Note that since our new h function returns only position, and not position and velocity, we must change sys.measurement_names from both x0 and x1 to just x0 for this simulation. We now visualize:
+
+#+begin_src python :results file
+  ax = X_df.plot(
+      title="True  State Values vs Measured Position ", xlabel="Time", ylabel="State Value", figsize=(8, 4)
+  )
+  ax.grid(True)  
+  Y_df.plot(ax=ax, style="x")
+
+  ax.legend()
+
+  path = "./images/truevsmeasuredposition.png"
+  plt.savefig(path)
+  print(path)
+  
+#+end_src
+
+#+RESULTS:
+[[file:./images/truevsmeasuredposition.png]]
+
+Once again, if we decide that this should be our new system, we simply update our system attributes:
+#+begin_src python
+  sys.h = position_sensor
+  sys.R = test_R
+  sys.measurement_names = ["x0"]
+#+end_src
+
+#+RESULTS:
+
+Are you feeling it now, Mr. Krabs?
+

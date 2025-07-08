@@ -1,0 +1,208 @@
+#+TITLE: The (Extended) Kalman Filter
+#+PROPERTY: header-args:python :session py :results output :exports both  
+* Kalman Filter
+Recall the final system in the Dynamical System section. We reinitialize it here for convenience:
+
+#+begin_src python
+  from pykal.system import System
+  import numpy as np
+  from numpy.typing import NDArray
+  import matplotlib.pyplot as plt
+  from typing import Callable
+
+
+  def driven_SHO_with_params(
+      damping_term: float = 0.1,
+      stiffness: float = 2.0,
+  ) -> Callable:
+      def driven_SHO(
+          x: NDArray[np.float64],
+          u: NDArray[np.float64],
+      ) -> NDArray[np.float64]:
+          x0, x1 = x[0, 0], x[1, 0]
+          u_val = u[0, 0]
+          dx0 = x1
+          dx1 = -stiffness * x0 - damping_term * x1 + u_val
+          return np.array([[dx0], [dx1]], dtype=np.float64)
+
+      return driven_SHO
+
+
+  def position_sensor(x: NDArray, u: NDArray, t: float) -> NDArray:
+      """Only measure position."""
+      return np.array([[x[0, 0]]])  # shape (1, 1)
+
+
+  def test_R(x: NDArray, u: NDArray, t: float) -> NDArray:
+      """Constant measurement noise: variance = 0.05^2"""
+      return 0.25 * np.eye(1)  # shape (1, 1)
+
+
+  def u_constant(t: float, constant_u=[10.0]) -> NDArray[np.float64]:
+      return np.array(constant_u, dtype=np.float64).reshape(-1, 1)
+
+
+  sys = System(
+      f=driven_SHO_with_params(0.1, 2),
+      state_names=["x0", "x1"],
+      h=position_sensor,
+      measurement_names=["x0"],
+      u=u_constant,
+      input_names=["force"],
+      system_type="cti",
+      R = test_R
+  )
+#+end_src
+
+#+RESULTS:
+
+Once again, simulate states and measurements and we visualize:
+#+begin_src python :results file
+  import warnings
+  warnings.filterwarnings("ignore", category=UserWarning)  
+  x0 = np.array([[1.0], [0.0]])
+  X, TX = sys.simulate_states(x0=x0, dt=0.1, t_span=(0, 10)) # X is (n_states,n_timesteps), T is (n_timesteps,)
+  X_df = sys.combine_data_and_time_into_DataFrame(X, TX, sys.state_names) # X_df is (n_timesteps,n_states)
+  Y, TY = sys.simulate_measurements(X=X, T=TX)
+  Y_df = sys.combine_data_and_time_into_DataFrame(Y,TY,["meas_" + name for name in sys.measurement_names])
+
+  ax = X_df.plot(
+        title="True  State Values vs Measured Position ", xlabel="Time", ylabel="State Value", figsize=(8, 4)
+    )
+  ax.grid(True)  
+  Y_df.plot(ax=ax, style="x")
+
+  ax.legend()
+
+  path = "./images/truevsmeasuredposition.png"
+  plt.savefig(path)
+  print(path)  
+#+end_src
+
+#+RESULTS:
+[[file:./images/truevsmeasuredposition.png]]
+  fig = self.plt.figure(figsize=self.figsize)
+./images/truevsmeasuredposition.png]]
+  fig = self.plt.figure(figsize=self.figsize)
+./images/truevsmeasuredposition.png]]
+
+#+begin_src python :results file :exports both
+  from pykal.kf import EKF
+  import numpy as np
+  import matplotlib.pyplot as plt
+
+  # Initial guess and covariance
+  x0_est = np.array([[0.5], [0.0]])
+  P0 = 0.5 * np.eye(2)
+
+  # Empirical Jacobians using system method
+  F_emp = sys.compute_empirical_jacobian_wrt_x(sys.f)
+  H_emp = sys.compute_empirical_jacobian_wrt_x(sys.h)
+
+  # Instantiate EKF and run
+  ekf = EKF(sys)
+  X_est, P_est, T_est = ekf.run(
+      x0=x0_est,
+      P0=P0,
+      Y=Y,
+      start_time=0.0,
+      dt=0.1,
+      override_system_F=F_emp,
+      override_system_H=H_emp,
+      square_root=False,
+  )
+
+  # Convert to DataFrame and Series
+  X_est_df = sys.combine_data_and_time_into_DataFrame(
+      X_est, T_est, ["est_" + name for name in sys.state_names]
+  )
+  P_est_sr = sys.combine_matrix_series_with_time(P_est, T_est)
+
+  # Plot results
+  ax = X_df.plot(
+      title="Estimated vs True State with Position Measurements",
+      xlabel="Time",
+      ylabel="State Value",
+      figsize=(8, 4),
+      linewidth=2,
+  )
+  X_est_df.plot(ax=ax, linestyle="--")
+  Y_df.plot(ax=ax, style="x")
+
+  # Add ±3σ shaded confidence intervals
+  for idx, name in enumerate(sys.state_names):
+      sigma = P_est_sr.apply(lambda P: np.sqrt(P[idx, idx]))
+      est = X_est_df[f"est_{name}"]
+      lower = est - 3 * sigma
+      upper = est + 3 * sigma
+      ax.fill_between(T_est, lower, upper, alpha=0.3, label=f"{name} ±3σ")
+
+  ax.legend()
+  ax.grid(True)
+
+  kf_path = "./images/kalman_estimate.png"
+  plt.savefig(kf_path)
+  print(kf_path)
+#+end_src
+
+#+RESULTS:
+[[file:./images/kalman_estimate.png]]
+
+
+#+begin_src python :results file
+  def beta_freeze_x1(t: float) -> NDArray[np.float64]:
+      return np.array([[1.0], [0.0]])  # full update for x0, no update for x1
+
+  def beta_partial(t: float) -> NDArray[np.float64]:
+      return np.array([[0.5], [1.0]])  # partial update for x0, full for x1 
+
+  X_est, P_est, T_est = ekf.run(
+      x0=x0_est,
+      P0=P0,
+      Y=Y,
+      start_time=0.0,
+      dt=0.1,
+      override_system_F=F_emp,
+      override_system_H=H_emp,
+      square_root=False,
+      override_system_beta = False
+  )
+  # Convert to DataFrame and Series
+  X_est_df = sys.combine_data_and_time_into_DataFrame(
+      X_est, T_est, ["est_" + name for name in sys.state_names]
+  )
+  P_est_sr = sys.combine_matrix_series_with_time(P_est, T_est)
+
+  # Plot results
+  ax = X_df.plot(
+      title="Estimated vs True State with Position Measurements",
+      xlabel="Time",
+      ylabel="State Value",
+      figsize=(8, 4),
+      linewidth=2,
+  )
+  X_est_df.plot(ax=ax, linestyle="--")
+  Y_df.plot(ax=ax, style="x")
+
+  # Add ±3σ shaded confidence intervals
+  for idx, name in enumerate(sys.state_names):
+      sigma = P_est_sr.apply(lambda P: np.sqrt(P[idx, idx]))
+      est = X_est_df[f"est_{name}"]
+      lower = est - 3 * sigma
+      upper = est + 3 * sigma
+      ax.fill_between(T_est, lower, upper, alpha=0.3, label=f"{name} ±3σ")
+
+  ax.legend()
+  ax.grid(True)
+
+  kf_path = "./images/kalman_estimate.png"
+  plt.savefig(kf_path)
+  print(kf_path)  
+
+
+#+end_src
+
+#+RESULTS:
+[[file:./images/kalman_estimate.png]]
+  fig = self.plt.figure(figsize=self.figsize)
+./images/kalman_estimate.png]]

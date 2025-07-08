@@ -1,0 +1,748 @@
+#+TITLE: The Observability of States
+#+PROPERTY: header-args:python :session py :results output :exports both
+
+* Observability
+** Intuition
+** Algebraic Definition
+Let \( X \subseteq \mathbb{R}^{n} \) and \( Y \subseteq \mathbb{R}^{m} \) be Hilbert spaces, and let \( f: X \rightarrow Y \) be a smooth function. We consider the following problem: given \( y \in Y \), find an \( x \in X \) such that \( f(x) = y \). Recall the following:
+\begin{itemize}
+
+  \item If \( f \) is \textbf{surjective}, that is, \textbf{onto}, then for all \( y \in Y \), there exists some \( x \in X \) such that \( f(x) = y \). Note that \( x \) may not be unique.
+
+ \item If \( f \) is \textbf{injective},that is, \textbf{one-to-one}, and \( y \in f(X) \), then there exists a unique \( x \in X\) such that \( f(x) = y \), given by \(x = f^{-1}(y) \). If \( y \notin f(X) \), then no such \( x \) exists.
+  
+
+  
+  \item If \( f \) is \textbf{bijective}, that is, \textbf{one-to-one} and \textbf{onto}, then a unique solution \( x = f^{-1}(y) \) exists for every \( y \in Y \).
+ \end{itemize}
+ If we think of \( X \) as the state space, \( Y \) as the measurement space, and \( f \) as the measurement function (we will denote it by h for notational consistency), then solving \( h(x)=y \) means that, given a measurement \( y \) and a measurement function \( h \), can we find the underlying state \( x \)? If \( x \) is unique, we say that \( x \) is \textbf{observable} given \( y \).
+
+ If \( h \) is linear, we may represent \( h(x) \) as the matrix product \( Hx \) for some matrix \( H \), so we then have \( Hx = y \). If \( H H^{T} \) is nonsingular, then \( H \) is injective, so we say that \( x \) is observable. The general matrix product \( A A^{T} \) is called the \textbf{Grammain}; because of its connection with observability, we call \( H H^{T} \) the \textbf{Observability Grammian}. For a linear dynamical system,
+
+\[
+\dot{x}(t) = A x(t), \qquad y(t) = H x(t),
+\]
+
+the observability Grammian may be  computed as
+
+\[
+W_o(t_0, t_1) = \int_{t_0}^{t_1} \Phi(t, t_0)^T H^T H \Phi(t, t_0) \, dt,
+\]
+
+where \( \Phi(t, t_0) \) is the state transition matrix of the system. If \( W_o(t_0, t_1) \) is nonsingular, the system is observable on the interval \( [t_0, t_1] \). For linear time-invariant systems, we may instead define the \textbf{observability matrix}
+
+\[
+\mathcal{O} = \begin{bmatrix}
+H \\
+H A \\
+H A^2 \\
+\vdots \\
+H A^{n-1}
+\end{bmatrix},
+\]
+where the system is observable if and only if \( \mathcal{O} \) has full rank.
+** Statistical Definition
+Let \( x \in \mathbb{R}^{n} \) be the true state of a system, and let \( y \in \mathbb{R}^{m} \) be a noisy measurement such that
+
+\[
+y = h(x) + v,
+\]
+
+where \( h: \mathbb{R}^{n} \rightarrow \mathbb{R}^{m} \) is the measurement function, and \( v \sim \mathcal{N}(0, R) \) is a zero-mean Gaussian noise term with covariance \( R \). In this setting, we ask a different question: \textit{how much information does the measurement \( y \) provide about the state \( x \)}?
+
+We define the statistical observability of a state by examining the inverse problem: recover \( x \) from noisy measurements \( y \). The posterior distribution of \( x \) given \( y \) is governed by Bayes’ theorem:
+
+\[
+p(x \mid y) \propto p(y \mid x) p(x),
+\]
+
+where the likelihood is determined by the measurement model. In the linear-Gaussian case,
+
+\[
+y = H x + v, \qquad v \sim \mathcal{N}(0, R),
+\]
+
+the likelihood is given by
+
+\[
+p(y \mid x) \propto \exp\left( -\frac{1}{2} (y - Hx)^T R^{-1} (y - Hx) \right).
+\]
+
+The \textbf{Fisher Information Matrix} \( \mathcal{I}(x) \) associated with the measurement is defined as
+
+\[
+\mathcal{I}(x) = H^T R^{-1} H.
+\]
+
+This matrix quantifies the amount of information that the measurement \( y \) carries about the state \( x \). If \( \mathcal{I}(x) \) is nonsingular, then the posterior distribution \( p(x \mid y) \) is sharply peaked, and the state \( x \) can be inferred with high confidence. In this case, we say that the state \( x \) is \textbf{statistically observable}.
+
+Conversely, if \( \mathcal{I}(x) \) is singular, then some directions in the state space are unidentifiable from the measurement, and the corresponding components of \( x \) are statistically unobservable. Thus, statistical observability is governed by the rank of the Fisher Information Matrix.
+
+** Example: Obscured Damped Harmonic Oscillator
+Recall the final system in the Dynamical System section. We reinitialize it here for convenience:
+
+#+begin_src python
+  from pykal.system import System
+  import numpy as np
+  from numpy.typing import NDArray
+  import matplotlib.pyplot as plt
+  from typing import Callable
+
+
+  def driven_SHO_with_params(
+      damping_term: float = 0.1,
+      stiffness: float = 2.0,
+  ) -> Callable:
+      def driven_SHO(
+          x: NDArray[np.float64],
+          u: NDArray[np.float64],
+      ) -> NDArray[np.float64]:
+          x0, x1 = x[0, 0], x[1, 0]
+          u_val = u[0, 0]
+          dx0 = x1
+          dx1 = -stiffness * x0 - damping_term * x1 + u_val
+          return np.array([[dx0], [dx1]], dtype=np.float64)
+
+      return driven_SHO
+
+
+  def position_sensor(x: NDArray, u: NDArray, t: float) -> NDArray:
+      """Only measure position."""
+      return np.array([[x[0, 0]]])  # shape (1, 1)
+
+
+  def test_R(x: NDArray, u: NDArray, t: float) -> NDArray:
+      """Constant measurement noise: variance = 0.05^2"""
+      return 0.25 * np.eye(1)  # shape (1, 1)
+
+
+  def u_constant(t: float, constant_u=[10.0]) -> NDArray[np.float64]:
+      return np.array(constant_u, dtype=np.float64).reshape(-1, 1)
+
+
+  sys = System(
+      f=driven_SHO_with_params(0.1, 2),
+      state_names=["x0", "x1"],
+      h=position_sensor,
+      measurement_names=["x0"],
+      u=u_constant,
+      input_names=["force"],
+      system_type="cti",
+  )
+#+end_src
+
+#+RESULTS:
+
+Once again, simulate states and measurements and we visualize:
+#+begin_src python :results file
+  x0 = np.array([[1.0], [0.0]])
+  X, TX = sys.simulate_states(x0=x0, dt=0.1, t_span=(0, 10)) # X is (n_states,n_timesteps), T is (n_timesteps,)
+  X_df = sys.combine_data_and_time_into_DataFrame(X, TX, sys.state_names) # X_df is (n_timesteps,n_states)
+  Y, TY = sys.simulate_measurements(X=X, T=TX)
+  Y_df = sys.combine_data_and_time_into_DataFrame(Y,TY,["x0"])
+
+  ax = X_df.plot(
+      title="True  State Values vs Measured Position ", xlabel="Time", ylabel="State Value", figsize=(8, 4)
+  )
+  ax.grid(True)  
+  Y_df.plot(ax=ax, style="x")
+
+  ax.legend()
+
+  path = "./images/truevsmeasuredposition.png"
+  plt.savefig(path)
+  print(path)  
+#+end_src
+
+#+RESULTS:
+[[file:./images/truevsmeasuredposition.png]]
+  warnings.warn(
+./images/truevsmeasuredposition.png]]
+  warnings.warn(
+./images/truevsmeasuredposition.png]]
+
+We now compute the observability grammian over the entire trajecotry and find the individual state observability.
+#+begin_src python
+  W = sys.compute_empirical_observability_grammian(x0=x0,t_span=(0,10),dt=0.1)
+  print(sys.compute_state_observability_indices(W))
+#+end_src
+
+
+#+RESULTS:
+
+If we are interested in the observability of states over time windows, that is also possible.
+
+#+begin_src python :results silent
+  window_size = 2.0
+  step_size = 0.5
+  t_start = 0.0
+  t_end = 10.0
+
+  window_times = np.arange(t_start, t_end - window_size + step_size, step_size)
+
+  results = {}
+
+  for t0 in window_times:
+      tf = t0 + window_size
+      W = sys.compute_empirical_observability_grammian(x0=x0, t_span=(t0, tf), dt=0.1)
+      O = sys.compute_state_observability_indices(W)
+      results[(t0, tf)] = O
+
+  # Pretty print
+  for (t0, tf), obs in results.items():
+      print(f"[{t0:.1f}, {tf:.1f}]: {obs}")
+
+#+end_src
+
+Suppose we have an occlusion for our sensor. 
+#+begin_src python :results file
+  def position_sensor_occluded(x: NDArray, u: NDArray, t: float) -> NDArray:
+      """Only return position when not occluded (e.g., obstacle blocks view for x > 3)."""
+      position = x[0, 0]
+      return np.array([[np.nan if position > 1.0 and position < 8  else position]])
+  Y, TY = sys.simulate_measurements(X=X, T=TX, override_system_h=position_sensor_occluded)
+  Y_df = sys.combine_data_and_time_into_DataFrame(Y,TY,["x0"])  
+
+  ax = X_df.plot(
+      title="True  State Values vs Measured Position ", xlabel="Time", ylabel="State Value", figsize=(8, 4)
+  )
+  ax.grid(True)  
+  Y_df.plot(ax=ax, style="x")
+
+  ax.legend()
+
+  path = "./images/occludedpositionmeasurements.png"
+  plt.savefig(path)
+  print(path)    
+#+end_src
+
+#+RESULTS:
+[[file:./images/occludedpositionmeasurements.png]]
+
+We now compute the observability grammian over the entire trajecotry and find the individual state observability.
+#+begin_src python
+  W = sys.compute_empirical_observability_grammian(x0=x0,t_span=(0,10),dt=0.1,override_system_h = position_sensor_occluded)
+  print(sys.compute_state_observability_indices(W))
+#+end_src
+
+
+#+RESULTS:
+
+If we are interested in the observability of states over time windows, that is also possible.
+
+#+begin_src python :results silent
+  window_size = 1
+  step_size = 0.5
+  t_start = 0.0
+  t_end = 10.0
+
+  window_times = np.arange(t_start, t_end - window_size + step_size, step_size)
+
+  results = {}
+
+  for t0 in window_times:
+      tf = t0 + window_size
+      W = sys.compute_empirical_observability_grammian(x0=x0, t_span=(t0, tf), dt=0.1,override_system_h = position_sensor_occluded)
+      O = sys.compute_state_observability_indices(W)
+      results[(t0, tf)] = O
+
+  # Pretty print
+  for (t0, tf), obs in results.items():
+      print(f"[{t0:.1f}, {tf:.1f}]: {obs}")
+
+#+end_src
+
+
+#+begin_src python :results file :exports both :session py
+
+
+  window_midpoints = [0.5*(t0+tf) for (t0, tf) in results.keys()]
+  obs_x0 = [obs["x0"] for obs in results.values()]
+  obs_x1 = [obs["x1"] for obs in results.values()]
+
+  plt.figure(figsize=(10, 4))
+  plt.plot(window_midpoints, obs_x0, label="Observability: x0")
+  plt.plot(window_midpoints, obs_x1, label="Observability: x1")
+  plt.xlabel("Time (center of window)")
+  plt.ylabel("Observability Index")
+  plt.title("State Observability Over Time")
+  plt.ylim(-0.1, 1.1)
+  plt.grid(True)
+  plt.legend()
+  plt.tight_layout()
+
+  path = "./images/observability_over_time.png"
+  plt.savefig(path)
+  print(path)
+#+end_src
+
+
+
+#+RESULTS:
+[[file:./images/observability_over_time.png]]
+
+
+** Nonlinear Pendulum
+#+begin_src python 
+def nonlinear_pendulum(g=9.81, ell=1.0) -> Callable:
+    def f(x: NDArray, u: NDArray) -> NDArray:
+        theta, theta_dot = x[0, 0], x[1, 0]
+        dtheta = theta_dot
+        dtheta_dot = - (g / ell) * np.sin(theta)
+        return np.array([[dtheta], [dtheta_dot]], dtype=np.float64)
+    return f
+
+def occluded_angle_sensor(x: NDArray, u: NDArray, t: float) -> NDArray:
+    theta = x[0, 0]
+    return np.array([[np.nan if np.abs(theta) < 0.2 else theta]])
+
+def R_small(x: NDArray, u: NDArray, t: float) -> NDArray:
+    return 0.01 * np.eye(1)
+
+def u_zero(t: float) -> NDArray:
+    return np.zeros((1, 1))
+
+sys = System(
+    f=nonlinear_pendulum(),
+    state_names=["theta", "theta_dot"],
+    h=occluded_angle_sensor,
+    measurement_names=["theta"],
+    u=u_zero,
+    input_names=["none"],
+    system_type="cti",
+)
+#+end_src
+
+#+RESULTS:
+
+
+#+begin_src python :results file
+x0 = np.array([[0.0], [2.0]])
+X, TX = sys.simulate_states(x0=x0, dt=0.05, t_span=(0, 10))
+Y, TY = sys.simulate_measurements(X=X, T=TX, override_system_h=occluded_angle_sensor)
+
+X_df = sys.combine_data_and_time_into_DataFrame(X, TX, sys.state_names)
+Y_df = sys.combine_data_and_time_into_DataFrame(Y, TY, ["theta"])
+
+ax = X_df.plot(title="Nonlinear Pendulum with Occluded Sensor", xlabel="Time", ylabel="Value", figsize=(8, 4))
+Y_df.plot(ax=ax, style="x")
+ax.legend()
+ax.grid(True)
+
+path = "./images/nonlinear_pendulum_occlusion.png"
+plt.tight_layout()
+plt.savefig(path)
+print(path)
+#+end_src
+
+#+RESULTS:
+[[file:./images/nonlinear_pendulum_occlusion.png]]
+  warnings.warn(
+./images/nonlinear_pendulum_occlusion.png]]
+  warnings.warn(
+./images/nonlinear_pendulum_occlusion.png]]
+
+
+#+begin_src python :results silent
+window_size = 1.0
+step_size = 0.2
+t_start = 0.0
+t_end = 10.0
+
+results = {}
+window_times = np.arange(t_start, t_end - window_size + step_size, step_size)
+
+for t0 in window_times:
+    tf = t0 + window_size
+    W = sys.compute_empirical_observability_grammian(
+        x0=x0, t_span=(t0, tf), dt=0.05,
+    )
+    O = sys.compute_state_observability_indices(W)
+    results[(t0, tf)] = O
+#+end_src
+
+#+begin_src python :results file :exports both
+window_midpoints = [0.5*(t0+tf) for (t0, tf) in results.keys()]
+obs_theta = [obs["theta"] for obs in results.values()]
+obs_theta_dot = [obs["theta_dot"] for obs in results.values()]
+
+plt.figure(figsize=(10, 4))
+plt.plot(window_midpoints, obs_theta, label="Observability: θ")
+plt.plot(window_midpoints, obs_theta_dot, label="Observability: θ̇")
+plt.xlabel("Time (center of window)")
+plt.ylabel("Observability Index")
+plt.title("State Observability Over Time (Nonlinear Pendulum)")
+plt.ylim(-0.1, 1.1)
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+
+path = "./images/observability_pendulum.png"
+plt.savefig(path)
+print(path)
+#+end_src
+
+#+RESULTS:
+[[file:./images/observability_pendulum.png]]
+
+** Observable Subspaces
+In general, a system may not be fully observable — that is, only a subset of the state space may influence the measurements. In such cases, we define the \textbf{observable subspace} of the system to be the set of all states that are distinguishable from the measurements.
+
+Let \( \mathcal{O} \subseteq \mathbb{R}^n \) denote the observable subspace. For a linear time-invariant system
+
+\[
+\dot{x}(t) = A x(t), \qquad y(t) = H x(t),
+\]
+
+the observable subspace is the smallest \( A \)-invariant subspace that contains the range of \( H^T \). Equivalently, it is the span of the rows of the observability matrix
+
+\[
+\mathcal{O} = \begin{bmatrix}
+H \\
+H A \\
+H A^2 \\
+\vdots \\
+H A^{n-1}
+\end{bmatrix}.
+\]
+
+Let \( \mathscr{O} = \operatorname{rowspace}(\mathcal{O}) \subseteq \mathbb{R}^n \). Then \( x_1, x_2 \in \mathbb{R}^n \) are indistinguishable from measurements if and only if \( x_1 - x_2 \in \mathscr{O}^\perp \), the orthogonal complement of the observable subspace. That is, the unobservable directions are those lying in the null space of \( \mathcal{O} \).
+
+If the system is not observable, we may perform a change of coordinates \( T \) such that
+
+\[
+x = T \begin{bmatrix} x_o \\ x_u \end{bmatrix},
+\]
+
+where \( x_o \) corresponds to the observable states and \( x_u \) to the unobservable ones. The system matrices may then be partitioned as
+
+\[
+T^{-1} A T = \begin{bmatrix}
+A_{oo} & A_{ou} \\
+0 & A_{uu}
+\end{bmatrix}, \qquad H T = \begin{bmatrix}
+H_o & 0
+\end{bmatrix}.
+\]
+
+This decomposition explicitly separates the observable and unobservable dynamics. Only \( x_o \) influences the measurements \( y \), while \( x_u \) evolves autonomously and cannot be inferred from observations.
+
+Thus, even when full-state observability fails, the system may still be partially observable in a lower-dimensional subspace of the state space.
+
+** Individual-State Observability
+In some applications, we are interested not in the observability of the entire state vector \( x \in \mathbb{R}^n \), but in whether a specific component \( x_i \) is observable. This leads to the notion of \textbf{individual-state observability}, which asks whether the value of \( x_i \) can be inferred from the sequence of measurements \( y(t) \).
+
+In the linear time-invariant case
+
+\[
+\dot{x}(t) = A x(t), \qquad y(t) = H x(t),
+\]
+
+we say that state \( x_i \) is observable if its value can be uniquely determined from the output \( y(t) \) over a finite time interval. Equivalently, \( x_i \) is observable if the \( i \)th unit vector \( e_i \) lies in the row space of the observability matrix
+
+\[
+\mathcal{O} = \begin{bmatrix}
+H \\
+H A \\
+H A^2 \\
+\vdots \\
+H A^{n-1}
+\end{bmatrix}.
+\]
+
+Let \( \mathscr{O} = \operatorname{rowspace}(\mathcal{O}) \subseteq \mathbb{R}^n \). Then \( x_i \) is observable if and only if \( e_i \in \mathscr{O} \), i.e., the observable subspace contains the direction corresponding to state \( x_i \). If \( e_i \in \mathscr{O}^\perp \), then \( x_i \) is unobservable.
+
+In the stochastic setting, individual-state observability may be assessed using the Fisher Information Matrix \( \mathcal{I}(x) = H^T R^{-1} H \). If the \( i \)th diagonal entry of \( \mathcal{I}(x) \) is zero, or if the \( i \)th row and column are linearly dependent on others, then \( x_i \) is statistically unobservable.
+
+This notion is particularly useful in filtering applications, where one may choose to suppress updates to unobservable states or assign confidence weights to partially observable states. Such strategies are employed in partial-update filters such as the Partial-Update Kalman Filter (PUKF) and the Observability-Aware Partial-Update Filter (OPSKF).
+
+** Example: Sensor Selection and Placement
+** Observability-Informed Filtering
+
+
+* State Estimation
+Recall the final system in the Dynamical System section. We reinitialize it here for convenience:
+
+#+begin_src python
+  from pykal.system import System
+  import numpy as np
+  from numpy.typing import NDArray
+  import matplotlib.pyplot as plt
+  from typing import Callable
+
+
+  def driven_SHO_with_params(
+      damping_term: float = 0.1,
+      stiffness: float = 2.0,
+  ) -> Callable:
+      def driven_SHO(
+          x: NDArray[np.float64],
+          u: NDArray[np.float64],
+      ) -> NDArray[np.float64]:
+          x0, x1 = x[0, 0], x[1, 0]
+          u_val = u[0, 0]
+          dx0 = x1
+          dx1 = -stiffness * x0 - damping_term * x1 + u_val
+          return np.array([[dx0], [dx1]], dtype=np.float64)
+
+      return driven_SHO
+
+
+  def position_sensor(x: NDArray, u: NDArray, t: float) -> NDArray:
+      """Only measure position."""
+      return np.array([[x[0, 0]]])  # shape (1, 1)
+
+
+  def test_R(x: NDArray, u: NDArray, t: float) -> NDArray:
+      """Constant measurement noise: variance = 0.05^2"""
+      return 0.25 * np.eye(1)  # shape (1, 1)
+
+
+  def u_constant(t: float, constant_u=[10.0]) -> NDArray[np.float64]:
+      return np.array(constant_u, dtype=np.float64).reshape(-1, 1)
+
+
+  sys = System(
+      f=driven_SHO_with_params(0.1, 2),
+      state_names=["x0", "x1"],
+      h=position_sensor,
+      measurement_names=["x0"],
+      u=u_constant,
+      input_names=["force"],
+      system_type="cti",
+  )
+#+end_src
+
+#+RESULTS:
+
+Once again, simulate states and measurements and we visualize:
+#+begin_src python :results file
+  x0 = np.array([[1.0], [0.0]])
+  X, TX = sys.simulate_states(x0=x0, dt=0.1, t_span=(0, 10)) # X is (n_states,n_timesteps), T is (n_timesteps,)
+  X_df = sys.combine_data_and_time_into_DataFrame(X, TX, sys.state_names) # X_df is (n_timesteps,n_states)
+  Y, TY = sys.simulate_measurements(X=X, T=TX)
+  Y_df = sys.combine_data_and_time_into_DataFrame(Y,TY,["x0"])
+
+  ax = X_df.plot(
+      title="True  State Values vs Measured Position ", xlabel="Time", ylabel="State Value", figsize=(8, 4)
+  )
+  ax.grid(True)  
+  Y_df.plot(ax=ax, style="x")
+
+  ax.legend()
+
+  path = "./images/truevsmeasuredposition.png"
+  plt.savefig(path)
+  print(path)  
+#+end_src
+
+#+RESULTS:
+[[file:./images/truevsmeasuredposition.png]]
+  warnings.warn(
+./images/truevsmeasuredposition.png]]
+
+
+But now suppose the measurements were very noisy:
+#+begin_src python :results file
+
+  def noisy_R(x: NDArray, u: NDArray, t: float) -> NDArray:
+      """Constant measurement noise: variance = 0.05^2"""
+      return 0.1 * np.eye(1)  # shape (1, 1)
+  x0 = np.array([[1.0], [0.0]])
+  X, TX = sys.simulate_states(x0=x0, dt=0.1, t_span=(0, 10)) # X is (n_states,n_timesteps), T is (n_timesteps,)
+  X_df = sys.combine_data_and_time_into_DataFrame(X, TX, sys.state_names) # X_df is (n_timesteps,n_states)
+  Y, TY = sys.simulate_measurements(X=X, T=TX,override_system_R=noisy_R)
+  Y_df = sys.combine_data_and_time_into_DataFrame(Y,TY,["x0"])
+
+  ax = X_df.plot(
+        title="True  State Values vs Measured Position ", xlabel="Time", ylabel="State Value", figsize=(8, 4)
+    )
+  ax.grid(True)  
+  Y_df.plot(ax=ax, style="x")
+
+  ax.legend()
+
+  path = "./images/truevsmeasuredpositionnoisy.png"
+  plt.savefig(path)
+  print(path)  
+#+end_src
+
+#+RESULTS:
+[[file:./images/truevsmeasuredpositionnoisy.png]]
+  warnings.warn(
+./images/truevsmeasuredpositionnoisy.png]]
+
+
+
+How can we estimate position? Using the Kalman filter!
+
+#+begin_src python
+  from pykal.kf import EKF
+  P0 = np.eye(2) * 1
+
+
+  ekf = EKF(sys)
+  x_hist_arr, P_hist_arr, t_hist_arr=  ekf.run(x0=x0,P0=P0,Y=Y,start_time=0.0, dt=0.1)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src python :results file :exports both :session py
+  x_est_df = ekf.combine_data_and_time_into_DataFrame(x_hist_arr,t_est,["x0","x1"])
+  P_hist_sr = ekf.combine_matrix_series_with_time(P_hist_arr,t_hist_arr)  
+      
+
+
+  # Extract estimated position and std dev from diagonal of P
+  idx_x0 = x_est_df.columns.get_loc("x0")
+  x0_est = x_est_df["x0"].to_numpy()
+  x0_true = X_df["x0"].to_numpy()
+  x0_var = np.array([P[idx_x0, idx_x0] for P in P_hist_sr])
+
+  # Plot
+  plt.figure(figsize=(10, 4))
+  plt.plot(X_df.index, x0_true, label="True Position", linewidth=2)
+  plt.plot(x_est_df.index, x0_est, 'x', label="Estimated Position", markersize=5)
+  plt.fill_between(
+      x_est_df.index,
+      x0_est - 3 * x0_std,
+      x0_est + 3 * x0_std,
+      alpha=0.2,
+      label="±3σ Bound"
+  )
+  plt.xlabel("Time")
+  plt.ylabel("Position")
+  plt.title("EKF Estimate vs. True Position with Uncertainty")
+  plt.grid(True)
+  plt.legend()
+  plt.tight_layout()
+
+  path = "./images/ekf_position_estimate.png"
+  plt.savefig(path)
+  print(path)
+
+#+end_src
+
+
+
+#+RESULTS:
+[[file:]]
+
+
+#+begin_src python :results file
+  import numpy as np
+  from numpy.typing import NDArray
+  from pykal.system import System
+  from pykal.kf import EKF
+
+
+  # Define system dynamics, measurement, and Jacobians
+  def f(x: NDArray, u: NDArray, t: float) -> NDArray:
+      A = np.array([[1.0, 0.1], [0, 1.0]])
+      return A @ x
+
+
+  def h(x: NDArray, u: NDArray, t: float) -> NDArray:
+      H = np.array([[1.0, 0.0]])
+      return H @ x
+
+
+  def F(x: NDArray, u: NDArray, t: float) -> NDArray:
+      return np.array([[1.0, 0.1], [0, 1.0]])
+
+
+  def H(x: NDArray, u: NDArray, t: float) -> NDArray:
+      return np.array([[1.0, 0.0]])
+
+
+  def Q(x: NDArray, u: NDArray, t: float) -> NDArray:
+      return 0.01 * np.eye(2)
+
+
+  def R(x: NDArray, u: NDArray, t: float) -> NDArray:
+      return 0.1 * np.eye(1)
+
+
+  def u(t: float) -> NDArray:
+      return np.zeros((1, 1))
+
+
+  # Construct the system object
+  sys = System(
+      f=f,
+      h=h,
+      Q=Q,
+      R=R,
+      u=u,
+      state_names=["x0", "x1"],
+      measurement_names=["x0"],
+      input_names = ["force"],
+      system_type="dti",
+      F=F,
+      H=H,
+  )
+
+  # Initial conditions
+  x0 = np.array([[1.0], [0.0]])
+  P0 = np.eye(2)
+
+  # Simulate ground truth states and noisy measurements
+  X, T = sys.simulate_states(x0=x0, t_span=(0, 10), dt=0.1)
+  Y, _ = sys.simulate_measurements(X=X, T=T)
+
+  # Run the EKF
+  ekf = EKF(sys)
+  x_hist, P_hist, t_hist = ekf.run(x0=x0, P0=P0, Y=Y, start_time=0.0, dt=0.1)
+
+  # Format for plotting
+  X_df = sys.combine_data_and_time_into_DataFrame(X, T, sys.state_names)
+  x_est_df = ekf.combine_data_and_time_into_DataFrame(x_hist, t_hist, sys.state_names)
+  P_hist_sr = ekf.combine_matrix_series_with_time(P_hist, t_hist)
+
+  # Extract uncertainty and plot
+  idx_x0 = x_est_df.columns.get_loc("x0")
+  x0_est = x_est_df["x0"].to_numpy()
+  x0_true = X_df["x0"].to_numpy()
+  x0_var = np.array([P[idx_x0, idx_x0] for P in P_hist_sr])
+  x0_std = np.sqrt(x0_var)
+
+  plt.figure(figsize=(10, 4))
+  plt.plot(X_df.index, x0_true, label="True Position", linewidth=2)
+  plt.plot(x_est_df.index, x0_est, "x", label="Estimated Position", markersize=5)
+  plt.fill_between(
+      x_est_df.index,
+      x0_est - 3 * x0_std,
+      x0_est + 3 * x0_std,
+      alpha=0.2,
+      label="±3σ Bound",
+  )
+  plt.xlabel("Time")
+  plt.ylabel("Position")
+  plt.title("EKF Estimate vs. True Position with Uncertainty")
+  plt.grid(True)
+  plt.legend()
+  plt.tight_layout()
+
+  path = "./images/ekf_estimate_discrete_linear.png"
+  plt.savefig(path)
+  print(path)
+#+end_src
+
+#+RESULTS:
+[[file:]]
+  warnings.warn(]]
+  warnings.warn(]]
+  warnings.warn(]]
+
+
+** Motivation: Unmodeled Dynamics, Uncertain Dynamics
+** Motivation: Missing Measurements, Noisy Sensors
+** The (Extended) Kalman Filter 
+** Example: Optimal Estimation 
+** The (Consider) Kalman Filter
+** Example: Nuisance States
+** The (Partial-Update) Kalman Filter
+** Example: When we should update
+I imagie the sho is fine when the observability is low because no nuisance sttae, but another one is different
+** The (Observability-Informed Partial-Update) Kalman Filter
+** Example: When low observability matters
