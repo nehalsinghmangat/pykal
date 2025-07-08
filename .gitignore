@@ -1,4 +1,4 @@
 .venv
 docs/build/*
-
 /.ipynb_checkpoints/
+/pykal/__pycache__/
