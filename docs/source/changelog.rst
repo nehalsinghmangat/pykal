@@ -1,10 +1,21 @@
 Changelog
 =========
 
-0.1.0 (2025-06-11)
-------------------
-- Initial release  
-- Added `BaseKF`, `EKF`, `SKF`, `PSKF`, `OPSKF` classes  
-- Example notebooks and Sphinx docs
+This document tracks notable changes to the `pykal` project.
 
-*(Future entries go here)*
+Version 0.1.0 (Initial Release)
+-------------------------------
+
+- Added validated `System` class with simulation support
+- Implemented EKF with full, square-root, and partial-update modes
+- Added safe I/O validation (`SafeIO`) with neural net compatibility
+- Integrated PSKF and OPSKF with dynamic β matrix support
+- Built foundational documentation and examples
+
+Planned for 0.2.0
+-----------------
+
+- UKF and Square-Root UKF (SR-UKF)
+- Information Filter and Square-Root Information Filter (SRIF)
+- Observability analysis tools (rank, CRB, empirical Gramian)
+- Improved plotting and simulation diagnostics

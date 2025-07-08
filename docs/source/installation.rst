@@ -1,8 +1,6 @@
 Installation
 ============
 
-This page describes how to install **pykal** and its optional extras.
-
 Requirements
 ------------
 - Python 3.8 or newer

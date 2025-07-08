@@ -1,59 +1,86 @@
-# Configuration file for the Sphinx documentation builder.
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+import os
+import sys
 
-# -- Project information -----------------------------------------------------
+
+# -- Path setup ---------------------------------------------------------------
+sys.path.insert(0, os.path.abspath(".."))  # Adjust as needed
+
+# -- Project information ------------------------------------------------------
 project = "pykal"
-copyright = "2025, Nehal Singh Mangat"
-author = "Nehal Singh Mangat"
-release = "0.1"
+author = "Your Name"
+release = "0.1.0"
 
-# -- General configuration ---------------------------------------------------
+# -- General configuration ----------------------------------------------------
 extensions = [
-    "sphinx.ext.autodoc",  # Core Sphinx autodoc support
+    #    "autoapi.extension",
+    "nbsphinx",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.mathjax",  # HTML math rendering
+    "sphinx.ext.imgmath",  # LaTeX/PDF math rendering
+    "sphinx.ext.viewcode",
     "sphinx.ext.graphviz",
-    "sphinx.ext.napoleon",  # NumPy and Google style docstrings
-    "sphinx.ext.doctest",  # Test code in docstrings
-    "sphinx.ext.intersphinx",  # Link to other projects' docs
-    "sphinx.ext.autosummary",  # Generate API summary pages
-    "nbsphinx",  # renders .ipynb as pages
-    "sphinx.ext.mathjax",
+    #   "sphinx.ext.autosummary",
+    "sphinx_togglebutton",
 ]
 
-# Automatically generate stub pages for documented modules
-autosummary_generate = True
 
-# -- Options for doctest -----------------------------------------------------
-# Code executed before each doctest block
-doctest_global_setup = """
-import pykal
-"""
+# AutoAPI config
+# autoapi_type = "python"
+# autoapi_dirs = ["../../pykal"]  # adjust based on conf.py's location (in docs/source/)
+# autoapi_keep_files = True  # Keep the generated .rst files (optional but useful)
+# autoapi_root = "autoapi"  # Where generated .rst files are output inside source/
 
-# Enable testing of doctest blocks in .rst and .py files
-doctest_test_doctest_blocks = "True"
 
-# Import Python's doctest module and Sphinx flags
-import doctest
-
-# Configure doctest option flags:
-# - IGNORE_EXCEPTION_DETAIL: omit exception details
-# - NORMALIZE_WHITESPACE: ignore insignificant whitespace
-# - ELLIPSIS: allow "..." in expected output
-
-doctest_default_flags = (
-    doctest.IGNORE_EXCEPTION_DETAIL | doctest.NORMALIZE_WHITESPACE | doctest.ELLIPSIS
-)
-
-# -- intersphinx configuration -----------------------------------------------
-intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
-    "matplotlib": ("https://matplotlib.org/stable/", None),
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": False,
+    "private-members": False,
+    "special-members": False,
+    "inherited-members": False,
 }
+# autosummary_generate = True  # Automatically generate stub `.rst` files
+napoleon_google_docstring = False
+napoleon_numpy_docstring = True
 
 templates_path = ["_templates"]
 exclude_patterns = []
+nbsphinx_allow_errors = True
+autodoc_member_order = "bysource"
 
-# -- Options for HTML output -------------------------------------------------
+# -- HTML output --------------------------------------------------------------
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+
+# -- Math configuration -------------------------------------------------------
+mathjax_path = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+imgmath_image_format = "svg"
+imgmath_use_preview = True
+
+# -- LaTeX output -------------------------------------------------------------
+latex_engine = "pdflatex"  # Or 'xelatex' or 'lualatex'
+
+latex_elements = {
+    "papersize": "letterpaper",
+    "pointsize": "11pt",
+    "figure_align": "H",
+    "preamble": r"""
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{mathtools}
+\usepackage{physics}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{etoolbox}
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily,
+  breaklines=true,
+  columns=fullflexible
+}
+""",
+}
+
+# -- Options for EPUB output --------------------------------------------------
+epub_show_urls = "footnote"
