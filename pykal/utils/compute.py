@@ -3,7 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy.typing import NDArray
 from typing import Union, Optional, Callable, Sequence, List, Tuple
-from pykal.utils.safeio import SafeIO as safeio
+
+
 def error_pointwise(
     truedf: pd.DataFrame,
     estdf: pd.DataFrame,
@@ -205,10 +206,9 @@ def error_mse_per_state(truedf: pd.DataFrame, estdf: pd.DataFrame) -> pd.Series:
     return (diff**2).mean()
 
 
-
-
-
-def compute_eigenvalues_and_eigenvectors_of_grammian(M: NDArray) -> Tuple[NDArray, NDArray]:
+def compute_eigenvalues_and_eigenvectors_of_grammian(
+    M: NDArray,
+) -> Tuple[NDArray, NDArray]:
     """
     Compute the eigenvalues and eigenvectors of a symmetric matrix.
 
@@ -225,10 +225,11 @@ def compute_eigenvalues_and_eigenvectors_of_grammian(M: NDArray) -> Tuple[NDArra
         - eigvecs is a matrix whose columns are the corresponding eigenvectors.
     """
     eigvals, eigvecs = np.linalg.eigh(M)  # stable for symmetric matrices
-    idx = np.argsort(eigvals)[::-1]       # sort indices descending
+    idx = np.argsort(eigvals)[::-1]  # sort indices descending
     eigvals_sorted = eigvals[idx]
     eigvecs_sorted = eigvecs[:, idx]
     return eigvals_sorted, eigvecs_sorted
+
 
 def compute_condition_number_from_eigenvalues(eigvals: NDArray) -> float:
     """
@@ -257,7 +258,7 @@ def plot_observability_directions_from_eigenpairs(
     eigvecs: NDArray,
     state_names: Optional[Sequence[str]] = None,
     projection_dims: tuple[int, int] = (0, 1),
-    title: str = "Projected Observability Directions (2D)"
+    title: str = "Projected Observability Directions (2D)",
 ) -> None:
     """
     Plot eigenvectors of the observability Gramian projected into 2D to visualize
@@ -297,9 +298,21 @@ def plot_observability_directions_from_eigenpairs(
 
     for k in range(n):
         vec_proj = eigvecs_sorted[[i, j], k] * scales[k]
-        color = 'r' if k == 0 else ('b' if k == n - 1 else 'gray')
-        label = "Most observable" if k == 0 else ("Least observable" if k == n - 1 else None)
-        ax.quiver(*origin, *vec_proj, angles='xy', scale_units='xy', scale=1, color=color, label=label)
+        color = "r" if k == 0 else ("b" if k == n - 1 else "gray")
+        label = (
+            "Most observable"
+            if k == 0
+            else ("Least observable" if k == n - 1 else None)
+        )
+        ax.quiver(
+            *origin,
+            *vec_proj,
+            angles="xy",
+            scale_units="xy",
+            scale=1,
+            color=color,
+            label=label,
+        )
 
     xlabel = state_names[i] if state_names and len(state_names) > i else f"State {i}"
     ylabel = state_names[j] if state_names and len(state_names) > j else f"State {j}"
@@ -308,7 +321,7 @@ def plot_observability_directions_from_eigenpairs(
     ax.set_ylabel(ylabel)
     ax.set_title(title)
     ax.grid(True)
-    ax.set_aspect('equal')
+    ax.set_aspect("equal")
     ax.legend()
     plt.tight_layout()
     plt.show()
