@@ -5,7 +5,7 @@
 
 .. include:: introduction.rst
 
-.. toctree::
+..  toctree::
    :maxdepth: 2
    :caption: User Guide
 
@@ -14,10 +14,10 @@
    troubleshooting   
 
 .. toctree::
-   :maxdepth: 2
-   :caption: API Reference
+   :maxdepth: 1
+   :caption: API
 
-   apiref/API
+   apiref/index
 
 .. toctree::
    :maxdepth: 1

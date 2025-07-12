@@ -4,14 +4,15 @@ from numpy.typing import NDArray
 from scipy.integrate import solve_ivp
 from typing import Union, Optional, Callable, Sequence, List
 from pykal.system import System
-from pykal.kf import EKF
+from pykal.kf.kf import EKF, UKF
+
 
 class Observer:
     def __init__(self, system: System) -> None:
 
         self.sys = system
         self.ekf = EKF(system)
-        pass
+        self.ukf = UKF(system)
 
     def compute_observability_matrix(
         self,
@@ -322,15 +323,14 @@ class Observer:
             overlap_time_between_windows=overlap_time_between_windows,
         )
 
-
         scores_over_time = []
         times = []
 
         for window_t in list_of_t_windows:
-            W = self.compute_observability_grammian_from_observability_matrix(x0=x0,t_vector=window_t)            
-            sr = observability_metric_of_states(
-                W = W, output_sr=True
+            W = self.compute_observability_grammian_from_observability_matrix(
+                x0=x0, t_vector=window_t
             )
+            sr = observability_metric_of_states(W=W, output_sr=True)
             scores_over_time.extend([sr] * len(window_t))
             times.extend(window_t)
 

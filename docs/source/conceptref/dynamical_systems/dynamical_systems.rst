@@ -8,7 +8,11 @@ What is a Dynamical System?
 
    -- William Shakespeare (paraphrased)
 
-Everything. Every drop of rain or ripple in a pond; the worms in the dirt and the wires in your brain. You drive a dynamical system to work; you watch a dynamical system rise in the morning and set in the evening; and don't look now, but a pair of dynamical systems flick across the screen as you read this text. A **dynamical system** is simply a system that changes over time. This definition can conceivably apply to anything, so it depends on our discretion to use it meaningfully. A gnat is a dynamical system. A clock is a dynamical system.  We may concede that a broken clock or a dead gnat are systems, but they are dynamical no longer lest the clock should rust or the gnat decay. We often consider sufficiently complex dynamical systems to be composed of **subsystems** (e.g. every cell of a gnat is a world unto itself); conversly, we may claim our system is itself a subsystem of a larger **ecosystem** (consider how the average swamp is a buzzing of many gnats along with mosquitoes, flies, moths, and, why not, clocks.)
+Everything. Every drop of rain or ripple in a pond; the worms in the dirt and the wires in your brain. You drive a dynamical system to work; you watch a dynamical system rise in the morning and set in the evening; and don't look now, but a pair of dynamical systems are flicking across the screen as you read this text.
+
+Simpy put, a **dynamical system** is a system that changes over time. Since this definition can conceivably apply to anything, it depends on our discretion to use it meaningfully. A gnat is a dynamical system of cells. A clock is a dynamical system of springs and gears.  We may concede that a broken clock or a dead gnat are systems, but they are dynamical no longer.
+
+We often consider sufficiently complex dynamical systems to be composed of **subsystems** (e.g. every cell of a gnat is a world unto itself); conversly, we may claim our system itself is a subsystem of a larger **ecosystem** (consider how the average swamp is a buzzing of many gnats along with mosquitoes, flies, moths, and, why not, clocks.)
 
 Modeling a Dynamical System
 ===========================
