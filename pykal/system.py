@@ -112,8 +112,16 @@ class System(SafeIO):
             if R is not None
             else self.default_R(self.measurement_names)
         )
-        self._F = self._validate_func_signature(F) if F is not None else F
-        self._H = self._validate_func_signature(H) if H is not None else H
+        self._F = (
+            self._validate_func_signature(F)
+            if F is not None
+            else self.compute_jacobian_wrt_x(self.f)
+        )
+        self._H = (
+            self._validate_func_signature(H)
+            if H is not None
+            else self.compute_jacobian_wrt_x(self.h)
+        )
 
     @property
     def system_type(self):
@@ -614,7 +622,7 @@ class System(SafeIO):
             return np.array(Y).T, T
 
     def _matrix_jacobian_wrt_x_u_t(
-            self,
+        self,
         func: Callable,
         xk: NDArray,
         uk: NDArray,
@@ -721,7 +729,6 @@ class System(SafeIO):
 
         return Jx, Ju
 
-
     def compute_jacobian_wrt_x(
         self,
         func: Callable,
@@ -746,7 +753,6 @@ class System(SafeIO):
             return Jx
 
         return jacobian_x
-
 
     def compute_jacobian_wrt_u(
         self,
@@ -773,7 +779,6 @@ class System(SafeIO):
 
         return jacobian_u
 
-
     def compute_jacobian_wrt_t(
         self,
         func: Callable,
@@ -799,4 +804,4 @@ class System(SafeIO):
             )
             return Jt
 
-        return jacobian_t        
+        return jacobian_t
