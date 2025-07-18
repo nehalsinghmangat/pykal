@@ -1,4 +1,23 @@
-.venv
-docs/build/*
-/.ipynb_checkpoints/
-/pykal/__pycache__/
+# Python environment and bytecode
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+
+
+# Jupyter notebook artifacts (recursively)
+.ipynb_checkpoints/
+
+# Sphinx build
+docs/build/
+
+# Python package metadata
+pykal.egg-info/
+
+
+
+
+
+
+
+

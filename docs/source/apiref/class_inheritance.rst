@@ -1,8 +1,8 @@
 Class Inheritance and Module Usage
 ====================================
-The following diagrams shows the inheritance and module relationships among key components of the Kalman filter framework:
+The following diagrams show the inheritance and module relationships within the base pykal framework. Beneath each diagram is a table of links explaining the design and rationale of important classes, how each class interfaces with other classes, and so on. 
 
-Without ROS
+Base pykal
 ^^^^^^^^^^^
 
 .. graphviz::
@@ -10,7 +10,7 @@ Without ROS
 
    digraph ClassInheritance {
      node [shape=box, fontname="Helvetica", style=filled, fillcolor=lightgray];
-     rankdir=LR;
+     rankdir=TB;
      splines=ortho;
 
      // pykal/ supercluster
@@ -18,9 +18,14 @@ Without ROS
        label = "pykal/";
        fontcolor = "#a80000";
        style = dotted;
-       color = black;
        fillcolor = none;
 
+   // control_system/
+       subgraph cluster_module_control_system {
+          label = "control_system/";
+      fontcolor = "#a80000";
+       color = "dimgray";
+       fillcolor = none;
        // system.py
        subgraph cluster_system {
          label = "system.py";
@@ -36,67 +41,90 @@ Without ROS
          fontcolor = "#a80000";
          Observer [label="Observer", shape=note, fillcolor=lightblue];
        }
-     
 
-     // utils/ supercluster
-     subgraph cluster_utils {
-       label = "utils/";
-       fontcolor = "#a80000";
-       style = dotted;
-       color = black;
-       fillcolor = none;
-
-       // safeio.py
-       subgraph cluster_safeio {
-         label = "safeio.py";
+       // controller.py
+       subgraph cluster_controller {
+         label = "controller.py";
          style = rounded;
          fontcolor = "#a80000";
-         SafeIO [label="SafeIO", shape=note, fillcolor=white];
-       }
-
+         Controller [label="Controller", shape=note, fillcolor=lightblue];
+       }       
+     }
+     // pykal/ supercluster
+     subgraph cluster_pykal {
+       label = "utils/";
+       fontcolor = "#a80000";
+       color = "dimgray";
+       fillcolor = none;
        // compute.py
        subgraph cluster_compute {
          label = "compute.py";
          style = rounded;
          fontcolor = "#a80000";
-         Compute [label="Compute", shape=note, fillcolor=white];
-       }
-     }
+	 Observability [label="Observability", shape=note, fillcolor=white];
+	 Controllability [label="Controllability", shape=note, fillcolor=white];
+         Error [label="Error", shape=note, fillcolor=white];
+       }}
 
-     // kf/ supercluster
-     subgraph cluster_kf {
-       label = "kf/";
-       fontcolor = "#a80000";
-       style = dotted;
-       color = black;
+     subgraph cluster_module_control {
+          label = "control/";
+      fontcolor = "#a80000";
+       color = "dimgray";
        fillcolor = none;
 
-       // kf.py
-       subgraph cluster_module_kf {
-         label = "kf.py";
+       subgraph cluster_module_est {
+          label = "pid.py";
+      fontcolor = "#a80000";
+       color = "dimgray";
+       fillcolor = none;
+      PID [label="PID", shape=note, fillcolor=white]}}
+       
+       // est.py
+       subgraph cluster_module_est {
+          label = "est/";
+      fontcolor = "#a80000";
+       color = "dimgray";
+       fillcolor = none;
+
+       subgraph cluster_module_est {
+          label = "kf/";
+      fontcolor = "#a80000";
+       color = "dimgray";
+       fillcolor = none;
+       
+	 subgraph cluster_module_ekf {
+         label = "ekf.py";
          style = rounded;
          fontcolor = "#a80000";
-         EKF [label="KF", shape=note, fillcolor=white];
-         UKF [label="KF", shape=note, fillcolor=white];	 
+         EKF [label="EKF", shape=note, fillcolor=white];
        }
 
-       // kf_variants.py
-       subgraph cluster_module_kf_variants {
-         label = "kf_variants.py";
+	 subgraph cluster_module_ukf {
+         label = "ukf.py";
          style = rounded;
          fontcolor = "#a80000";
-         SKF [label="SKF", shape=note, fillcolor=white];
-         PSKF [label="PKF", shape=note, fillcolor=white];
-       }
-     }
+         UKF [label="UKF", shape=note, fillcolor=white];
+       }       
+     }}
+     Observer -> System [style=dotted];
+     Controller -> System [style=dotted];
      
-     // Relationships
-     System -> SafeIO [label="inherits"];
-     EKF -> Observer [style=dotted, label="used by"];
-     UKF -> Observer [style=dotted, label="used by"];     
-     Observer -> System [style=dotted, label="uses"];
+     EKF -> Observer [style=dotted];
+     UKF -> Observer [style=dotted];
+     PID -> Controller [style=dotted];
+
+     Observability -> System [style=dotted];
+     Controllability -> System [style=dotted]; 
    }}
 
+
+..  toctree::
+   :maxdepth: 2
+   :caption: Base pykal
+
+   base_pykal_rationale
+   
+   
 With ROS
 ^^^^^^^^
 
@@ -105,7 +133,7 @@ With ROS
 
    digraph ClassInheritance {
      node [shape=box, fontname="Helvetica", style=filled, fillcolor=lightgray];
-     rankdir=LR;
+     rankdir=RL;
      splines=ortho;
 
      // pykal/ supercluster
@@ -202,31 +230,8 @@ Node and Topic Topology
 
    digraph NodeTopicTopology {
      node [shape=box, fontname="Helvetica", style=filled, fillcolor=lightgray];
-     rankdir=RL;
+     rankdir=LR;
      splines=ortho;
-     // ros/ supercluster
-     subgraph cluster_ros {
-       label = "pykal/ros/";
-       fontcolor = "#a80000";
-       style = dotted;
-       color = black;
-       fillcolor = none;
-       // generate_observer_node.py
-       subgraph cluster_generate_observer_node {
-         label = "generate_observer_node.py";
-         style = rounded;
-         fontcolor = "#a80000";
-         ObserverNode [label="ObserverNode", shape=note, fillcolor=lightblue];
-       }
-
-       // generate_topic2sys_node.py
-       subgraph cluster_generate_topic2sys_node {
-         label = "generate_topic2sys_node.py";
-         style = rounded;
-         fontcolor = "#a80000";
-         Topic2SysNode [label="Topic2SysNode", shape=note, fillcolor=lightblue];
-       }
-     }
 
      // ros/ supercluster
      subgraph cluster_topic_override {
@@ -249,11 +254,7 @@ Node and Topic Topology
 	 renamed_topic [label="/renamed_topic", shape=box, style=filled, fillcolor=lightblue, fontcolor="#0044cc"];
 	 topic [label="/topic", shape=box, style=filled, fillcolor=lightblue, fontcolor="#0044cc"];
 	 
-     
 
-     // Relationships between nodes and their generator classes
-     ObserverNode -> observer [style=dotted, label="creates"];
-     Topic2SysNode -> topic2sys [style=dotted, label="creates"];
 
      topic2sys -> sys_meas; 
      topic2sys -> topic;
