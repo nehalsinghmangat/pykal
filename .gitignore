@@ -1,0 +1,45 @@
+# Virtual environments
+**/.venv/
+**/.venvs/
+
+# ROS 2 build artifacts and src
+**/build/
+**/install/
+**/log/
+**/src/
+
+# Python bytecode and caches
+**/__pycache__/
+**/.pytest_cache/
+**/*.py[cod]
+
+# Python packaging artifacts
+**/*.egg
+**/*.egg-info/
+**/dist/
+**/develop-eggs/
+**/eggs/
+**/.eggs/
+
+# Auto-generated 
+**/auto/
+
+# Editor/IDE and OS junk
+*.swp
+*.swo
+*.bak
+*.DS_Store
+.vscode/
+.idea/
+
+# LaTeX build artifacts
+**/*.aux
+**/*.log
+**/*.toc
+**/*.out
+**/*.lof
+**/*.lot
+**/*.fls
+**/*.fdb_latexmk
+**/*.synctex.gz
+**/*.gz

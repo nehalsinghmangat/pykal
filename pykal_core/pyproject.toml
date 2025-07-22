@@ -1,0 +1,68 @@
+[build-system]
+requires = [
+  "setuptools>=61.0",
+  "wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pykal_core"
+version = "0.1"
+description = "pykal_core is a Python library for modeling general control systems."
+requires-python = ">=3.12"
+license = "MIT"
+authors = [
+  { name = "Nehal Singh Mangat", email = "nehalsinghmangat.software@gmail.com" }
+]
+keywords = ["kalman", "filter", "estimation"]
+dependencies = [
+  "numpy>=2.3.0",
+  "pandas>=2.3.0",
+  "matplotlib>=3.10.3",
+  "scipy>=1.15.3"
+]
+
+[project.optional-dependencies]
+dev = [
+  # Testing & coverage
+  "pytest>=7.0",
+  "pytest-doctestplus>=1.0.0",
+  "pytest-cov",
+  "coverage[toml]",
+
+  # Linting & formatting
+  "flake8>=6.0",
+  "black>=24.0",
+  "isort>=6.0",
+  "pylint",
+
+  # Static typing 
+  "mypy>=1.0",
+
+  # Pre-commit hooks
+  "pre-commit>=3.0",
+
+  # Packaging & publishing
+  "build>=0.10",
+  "twine>=4.0",
+  "setuptools-scm>=7.0",
+
+  # Documentation
+  "sphinx>=8.0",
+  "sphinx-rtd-theme>=1.3",
+  "nbsphinx>=0.9.7",  
+  "myst-parser>=1.0",
+  "sphinx-toolbox>=3.5"  # for inheritance-diagram
+]
+
+
+[project.urls]
+Homepage = "https://github.com/nehalsinghmangat/pykal_core"
+Documentation = "https://pykal_core.readthedocs.io"
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules"
+doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS"]
+
+[tool.setuptools]
+packages = ["pykal_core"]
