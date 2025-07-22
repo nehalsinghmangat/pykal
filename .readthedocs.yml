@@ -16,5 +16,5 @@ sphinx:
 # Install your package (with dev extras so all doc‐build deps are present)
 python:
   install:
-    - path: .
+    - path: ./pykal_core/
       extra_requirements: ["dev"]
