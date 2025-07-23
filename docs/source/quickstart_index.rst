@@ -1,7 +1,7 @@
 Quickstart
 ==========
 
-We recommend reading each section below to get an idea of the overall structure of the framework. Each section links to its respective package within the framework. After working through the tutorials in pykal_core and pykal_ros, you will be able to start designing your own control systems and implementing them on hardware.
+We recommend reading each section below to get an idea of the overall structure of the framework. Each section links to its respective package within the framework. After working through the tutorials in pykal_core and pykal_ros (and reviewing the third-party software Gazebo if needed), you will be able to start designing your own control systems and implementing them on hardware.
 
 For a motivating background on the origin of the **pykal** framework, please click here
 
@@ -122,3 +122,34 @@ pykal_ros
 
 
 
+Gazebo
+^^^^^^
+**Gazebo** is a third-party open-source robotics simulator which is compatible with ROS. It is the final bridge between simulation and hardware. To learn how to use the **Gazebo**  and how to interface it with ROS, please consult the official **Gazebo** website: `https://gazebosim.org/ <https://gazebosim.org/>`_
+
+
+.. graphviz::
+   :align: center
+
+   digraph RobotLoop {
+       rankdir=LR;
+       node [shape=box, style=filled, fillcolor=white, fontname="Helvetica"];
+
+       // pykal supercluster
+       subgraph cluster_gazebo {
+       label = "Gazebo";
+       fontcolor = "#a80000";
+       style = dotted;
+       fillcolor = none;
+
+       Simulation  [label="Simulation"];
+       Hardware  [label="Hardware"];       
+       }
+
+       // Forward arrows (solid black)
+       edge [color=red,style=dotted, penwidth=1];
+       Simulation  -> Hardware;
+
+       // Feedback arrows (dotted red)
+       edge [color=red, style=dotted, penwidth=1];
+       Hardware   -> Simulation;
+   }
