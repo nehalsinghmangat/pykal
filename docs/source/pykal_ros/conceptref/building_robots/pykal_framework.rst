@@ -19,16 +19,12 @@ pykal_core
    </div>
 
    
-A Python package that enables intuitive and flexible modeling of control systems, **pykal_core** includes:
 
-- standard control system tools (e.g.signal generators, Kalman Filters, PID Controllers)
-- support for arbitrary extension and modification of standard algorithms into cutting-edge research variants (e.g. Observability-Informed Partial-Update Extended-Kalman Filter)
-- support for arbitrary function models (e.g. analytical, ML-based) with a well-defined functional interface
 
 pykal_ros
 ---------
 
-**pykal_ros**  is the bridge between software and simulation (using the ROS API). To see the **pykal_ros** documentation, including installation and tutorials, please click here: :doc:`pykal_ros <../../pykal_ros/index>`   
+**pykal_ros**  is the bridge between software and simulation (using the ROS API). To see the **pykal_ros** documentation, including installation and tutorials, please click here: 
 
 .. graphviz::
    :align: center
@@ -56,15 +52,7 @@ pykal_ros
        edge [color=red, style=dotted, penwidth=1];
        Simulation   -> Software;
    }
-   
-A Python package that wraps the control theoretic objects defined in **pykal_core** into standard ROS nodes,  **pykal_ros** includes:
 
-- ``generate_[object]_node.py`` files that, when called with  ``ros2 run --rosargs``, spin up ros nodes that encapsulate user-defined ``pykal_core`` objects.
-- ``generate_meta_[object]_node.py`` files that, when called with  ``ros2 run --rosargs``, control the publishing of [object]-nodes
-
-   For example, one can define two ``observer_nodes`` for a system, one of which uses the standard EKF and the other a more computationally expensive KF-variant for highly nonlinear trajectories.
-
-   An ``observer_meta_node`` may monitor the nonlinearities of the system through some user-defined metric; once the nonlinearity exceeds a threshold, the ``observer_meta_node`` can halt the computations and publications occuring in the standard EKF node and start the same in the expensive KF-variant node. Once the nonlinearity has passed, the ``observer_meta_node`` can than switch the nodes back to their previous functioning.
 
 
 

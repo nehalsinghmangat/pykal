@@ -1,36 +1,4 @@
-=========
-pykal_ros
-=========
 
-``pykal_ros``  is the bridge between software and simulation (using the ROS API). It is a Python package that allows us to wrap the control theoretic objects defined in ``pykal_core`` into standard ROS nodes. 
-
-
-.. graphviz::
-   :align: center
-
-   digraph RobotLoop {
-       rankdir=LR;
-       node [shape=box, style=filled, fillcolor=white, fontname="Helvetica"];
-
-       // pykal supercluster
-       subgraph cluster_pykal_ros {
-       label = "pykal_ros";
-       fontcolor = "#a80000";
-       style = dotted;
-       fillcolor = none;
-
-       Software    [label="Software"];
-       Simulation  [label="Simulation"];
-       }
-
-       // Forward arrows (solid black)
-       edge [color=red,style=dotted, penwidth=1];
-       Software     -> Simulation;
-
-       // Feedback arrows (dotted red)
-       edge [color=red, style=dotted, penwidth=1];
-       Simulation   -> Software;
-   }
    
 Signal Nodes
 ------------
