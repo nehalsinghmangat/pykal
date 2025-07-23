@@ -1,19 +1,20 @@
 # .readthedocs.yml
 version: 2
 
-# Use Ubuntu 22.04 and Python 3.12
 build:
   os: ubuntu-22.04
-  apt_packages:
-    - pandoc  
   tools:
     python: "3.12"
 
-# Point Sphinx at your conf.py
+  apt_packages:
+    - graphviz
+    - pandoc
+
+# Point Sphinx at the right conf.py
 sphinx:
   configuration: docs/source/conf.py
 
-# Install your package (with dev extras so all doc‐build deps are present)
+# Install your package from the local path with dev dependencies
 python:
   install:
     - path: ./pykal_core/

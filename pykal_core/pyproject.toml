@@ -53,6 +53,8 @@ dev = [
   "nbsphinx>=0.9.7",  
   "myst-parser>=1.0",
   "sphinx-toolbox>=3.5"  # for inheritance-diagram
+  "graphviz",
+  "sphinxcontrib-graphviz"
 ]
 
 
