@@ -16,23 +16,27 @@ For a 3-minute video describing the motivation behind this framework and what it
 <table>
   <tr>
     <td align="center">
+      <img src="docs/source/_static/turtlebot.svg" alt="TurtleBot Overview" width="200"/><br/>
+      TurtleBot
+    </td>
+    <td align="center">
       <img src="docs/source/_static/turtlesim_software.gif" alt="Turtle Software" width="200"/><br/>
-      <strong>Software</strong>
+      Software
     </td>
     <td align="center">
       <img src="docs/source/_static/turtlesim_simulation.gif" alt="Turtle Simulation" width="200"/><br/>
-      <strong>Simulation</strong>
+      Simulation
     </td>
     <td align="center">
       <img src="docs/source/_static/turtlesim_hardware.gif" alt="Turtle Hardware" width="200"/><br/>
-      <strong>Hardware</strong>
-    </td>
-    <td align="center">
-      <img src="docs/source/_static/turtlebot.svg" alt="TurtleBot Overview" width="200"/><br/>
-      <strong>TurtleBot</strong>
+      Hardware
     </td>
   </tr>
 </table>
+
+<p align="center">
+  <img src="docs/source/_static/labels_for_steps_from_theory_to_hardware.png" alt="Step Labels" width="800"/>
+</p>
 
 
 ---
