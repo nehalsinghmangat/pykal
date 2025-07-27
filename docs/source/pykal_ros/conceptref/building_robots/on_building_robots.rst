@@ -18,6 +18,6 @@ This is what ``pykal`` aims to fix.
 
 ----
 
-:doc:`← The Paradox of Complexity <paradox_of_complexity>` | :doc:`To Quickstart → <../../../quickstart_index.rst>`
+:doc:`← The Paradox of Complexity <paradox_of_complexity>` | :doc:`To Quickstart → <../../../quickstart_index>`
 
 ----

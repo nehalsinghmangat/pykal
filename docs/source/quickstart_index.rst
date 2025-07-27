@@ -1,8 +1,8 @@
 Quickstart
 ==========
-For a motivating background on the origin of the **pykal** framework, please click here: :doc:`Building Robots </pykal_ros/conceptref/building_robots/index>`.
+For a motivating background on the origin of **pykal**, please click here: :doc:`Building Robots </pykal_ros/conceptref/building_robots/index>`.
 
-To be clear, **pykal** is not a package in itself; rather, **pykal** refers to the framework which is composed of **two** packages:  :doc:`pykal_core <./pykal_core/index>` and :doc:`pykal_ros <./pykal_ros/index>`. After working through the tutorials in (and reviewing the third-party software Gazebo if needed), you will be able to start designing your own control systems and implementing them in hardware.
+To be clear, **pykal** is not a package in itself; rather, **pykal** refers to the framework which is composed of **two** packages:  :doc:`pykal_core <./pykal_core/index>` and :doc:`pykal_ros <./pykal_ros/index>`. After working through the tutorials (and reviewing the third-party software `Gazebo <https://gazebosim.org/>`_ if needed), you will be able to start designing your own control systems and implementing them in hardware.
 
 For an intuitive overview of the framework as a whole, please continue reading.
 
@@ -35,7 +35,6 @@ Framework Overview
    <div style="margin-top: 1.5em;"></div>
    
 **pykal** aims to make every step forward, every step back, and every detour on this road as painless as possible. 
-
 
 pykal_core
 ^^^^^^^^^^
