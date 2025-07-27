@@ -41,6 +41,17 @@ For a 3-minute video describing the motivation behind this framework and ideas f
 Full documentation is available at: [https://pykal.readthedocs.io](https://pykal.readthedocs.io)
 
 ---
+## 👁️ Watch for Releases
 
-## License
+To get notified when **pykal** is officially released:
+
+1. Go to the GitHub repo: [https://github.com/nehalsinghmangat/pykal](https://github.com/nehalsinghmangat/pykal)
+2. Click the `👁️ Watch` button near the top-right of the page.
+3. Select **"Custom"** or **"Releases only"** from the dropdown.
+4. Ensure **"Releases"** is checked.
+
+You’ll now receive notifications when the first release is published.
+
+
+
 
