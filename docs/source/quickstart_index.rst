@@ -1,12 +1,14 @@
 Quickstart
 ==========
+For a motivating background on the origin of the **pykal** framework, please click here: :doc:`Building Robots </pykal_ros/conceptref/building_robots/index>`.
 
-We recommend reading each section below to get an idea of the overall structure of the framework. Each section links to its respective package within the framework. After working through the tutorials in pykal_core and pykal_ros (and reviewing the third-party software Gazebo if needed), you will be able to start designing your own control systems and implementing them on hardware.
+To be clear, **pykal** is not a package in itself; rather, **pykal** refers to the framework which is composed of **two** packages:  :doc:`pykal_core <./pykal_core/index>` and :doc:`pykal_ros <./pykal_ros/index>`. After working through the tutorials in (and reviewing the third-party software Gazebo if needed), you will be able to start designing your own control systems and implementing them in hardware.
 
-For a motivating background on the origin of the **pykal** framework, please click here
+For an intuitive overview of the framework as a whole, please continue reading.
 
-Overview of pykal
------------------
+Framework Overview
+------------------
+
 **pykal** operates on the assumption that this is the road from brain to robot:
    
 .. graphviz::
@@ -32,13 +34,13 @@ Overview of pykal
 
    <div style="margin-top: 1.5em;"></div>
    
-**pykal** aims to make every step forward, every step back, and every detour on this road as painless as possible. To be clear, **pykal** is not a package in itself; rather, **pykal** refers to the framework which is composed of two packages: pykal_core and pykal_ros. Each package is described below. 
+**pykal** aims to make every step forward, every step back, and every detour on this road as painless as possible. 
 
 
 pykal_core
 ^^^^^^^^^^
 
-``pykal_core`` is the bridge between theory and software. It is a Python package that enables intuitive and flexible modeling of control systems. For full documentation, including installation and tutorials, click here: :doc:`pykal_core <./pykal_core/index.rst>`.   
+``pykal_core`` is the bridge between theory and software. It is a Python package that enables intuitive and flexible modeling of control systems. For full documentation, including installation and tutorials, click here: :doc:`pykal_core <./pykal_core/index>`.   
 
 .. graphviz::
    :align: center
@@ -77,7 +79,7 @@ pykal_core
 pykal_ros
 ^^^^^^^^^
 
-``pykal_ros``  is the bridge between software and simulation (using the ROS API). It is a Python package that allows us to wrap the control theoretic objects defined in ``pykal_core`` into standard ROS nodes. For full documentation, including installation and tutorials, click here: :doc:`pykal_ros <./pykal_ros/index.rst>`.   
+``pykal_ros``  is the bridge between software and simulation (using the ROS API). It is a Python package that allows us to wrap the control theoretic objects defined in ``pykal_core`` into standard ROS nodes. For full documentation, including installation and tutorials, click here: :doc:`pykal_ros <./pykal_ros/index>`.   
 
 
 .. graphviz::

@@ -36,14 +36,14 @@ pykal_core
    installation
 
 ..  toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Tutorials
 
-   tutorials/quickstart
+   tutorials/index
    
 .. toctree::
    :maxdepth: 1
-   :caption: API
+   :caption: API Reference
 
    apiref/index
 
@@ -51,9 +51,7 @@ pykal_core
    :maxdepth: 1
    :caption: Conceptual Reference
 
-   conceptref/dynamical_systems/index
-   conceptref/state_estimation/index
-   conceptref/kalman_filters/index
+   conceptref/index.rst
    
 
 
