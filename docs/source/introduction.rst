@@ -3,38 +3,15 @@ pykal: From Theory to Python to ROS
 
 .. epigraph::
 
-   "Cross a river once, swim; cross a river twice, build a boat; cross a river thrice, build a bridge.
+   "Cross a river once, swim; cross a river twice, get a boat; cross a river thrice, build a bridge.
    "
    
    -- old Punjabi saying
 
    
-**pykal** is a Python framework designed to bridge the gap between the theoretical formulations of control systems and their respective implementation in robotics hardware. Roughly speaking, this is the road from brain to robot:
-   
-.. graphviz::
-   :align: center
+**pykal** is a Python framework designed to bridge the gap between the theoretical formulations of control systems and their respective implementation in robotics hardware. Designed for hobbyists, students, and academics alike, this framework won't cure cancer, but it can do the next best thing: make building robots easier.
 
-   digraph RobotLoop {
-       rankdir=LR;
-       node [shape=box, style=filled, fillcolor=white, fontname="Helvetica"];
-
-       Theory    [label="Theory"];
-       Software  [label="Software"];
-       Simulation[label="Simulation"];
-       Hardware  [label="Hardware"];
-
-       // Forward arrows (solid black)
-       edge [color=red,style=dotted, penwidth=1];
-       Theory     -> Software;
-       Software   -> Simulation;
-       Simulation -> Hardware;
-   }
-
-.. raw:: html
-
-   <div style="margin-top: 1.5em;"></div>
-   
-**pykal** aims to make every step forward, every step back, and every detour on this road as painless as possible. Designed for hobbyists, students, and academics alike, this framework won't cure cancer, but it can do the next best thing: make building robots easier.
+To access the Github repo and watch for the official release, click here:  `pykal repo<https://github.com/nehalsinghmangat/pykal?tab=readme-ov-file>`_
 
 To get started with **pykal**, or to explore the framework and its capabilities, click here: :doc:`Quickstart <quickstart_index>`.
 

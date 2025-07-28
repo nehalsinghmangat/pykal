@@ -2,7 +2,7 @@
 
 # pykal: From Theory to Python to ROS
 
-> _"Cross a river once, swim; cross a river twice, build a boat; cross a river thrice, build a bridge."_ > — old Punjabi saying
+> _"Cross a river once, swim; cross a river twice, get a boat; cross a river thrice, build a bridge."_  — old Punjabi saying
 
 pykal is a Python development framework that bridges the chasm between theoretical control systems and their implementation in hardware. Designed for hobbyists, students, and academics alike, this framework won't cure cancer, but it can do the next best thing: make building robots easier.
 
@@ -50,7 +50,7 @@ To get notified when **pykal** is officially released:
 3. Select **"Custom"** or **"Releases only"** from the dropdown.
 4. Ensure **"Releases"** is checked.
 
-You’ll now receive notifications when the first release is published.
+You’ll now receive notifications when the first release is published!
 
 
 
