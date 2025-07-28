@@ -3,7 +3,7 @@ pykal: From Theory to Python to ROS
 
 .. epigraph::
 
-   "Cross a river once, swim; cross a river twice, get a boat; cross a river thrice, build a bridge.
+   "Cross a river once, swim; cross a river twice, find a boat; cross a river thrice, build a bridge.
    "
    
    -- old Punjabi saying

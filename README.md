@@ -2,7 +2,7 @@
 
 # pykal: From Theory to Python to ROS
 
-> _"Cross a river once, swim; cross a river twice, get a boat; cross a river thrice, build a bridge."_  — old Punjabi saying
+> _"Cross a river once, swim; cross a river twice, find a boat; cross a river thrice, build a bridge."_  — old Punjabi saying
 
 pykal is a Python development framework that bridges the chasm between theoretical control systems and their implementation in hardware. Designed for hobbyists, students, and academics alike, this framework won't cure cancer, but it can do the next best thing: make building robots easier.
 
