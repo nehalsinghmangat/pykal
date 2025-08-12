@@ -11,14 +11,22 @@
   node distance=2.5cm and 2.5cm
 ]
 
-  % g node
-  \node[circ] (g) {$g$};
+  % Signal Generator box
+  \node[block] (siggen) {
+    \begin{tabular}{c}
+      Signal Generator \\
+      $r = G(t)$
+    \end{tabular}
+  };
+
+  % g node (circle t)
+  \node[circ, right=of siggen] (g) {$*$};
 
   % Controller to the right of g
   \node[block, right=2.5cm of g] (controller) {
     \begin{tabular}{c}
       Controller \\
-      $u = C(g(r,\hat{x}))$
+      $u = C(*(r,\hat{x}))$
     \end{tabular}
   };
 
@@ -39,9 +47,8 @@
     \end{tabular}
   };
 
-  % r input
-  \coordinate[left=2cm of g] (r_in);
-  \draw[arrow] (r_in) -- node[above] {$r$} (g.west);
+  % r input from Signal Generator to g
+  \draw[arrow] (siggen.east) -- node[above] {$r$} (g.west);
 
   % xhat from observer to g
   \draw[arrow] 
@@ -49,7 +56,7 @@
     node[midway, left] {$\hat{x}$};
 
   % g(r,xhat) into controller
-  \draw[arrow] (g.east) -- node[above] {$g(r,\hat{x})$} (controller.west);
+  \draw[arrow] (g.east) -- node[above] {$*(r,\hat{x})$} (controller.west);
 
   % u from controller to system
   \draw[arrow] (controller.east) -- node[above] {$u$} (system.west);
@@ -57,7 +64,7 @@
   % u elbow branch to observer
   \coordinate (usplit) at ($(controller.east)!0.5!(system.west)$);
   \coordinate[above=1em of observer.west] (observer_uin);
-  \draw[arrow] (usplit) |- (observer_uin) node[pos=0.75, left] {};
+  \draw[arrow] (usplit) |- (observer_uin);
 
   % y from system to observer
   \draw[arrow] (system.south) -- node[right] {$y$} (observer.north);
