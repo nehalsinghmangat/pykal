@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.typing import NDArray
 from typing import Union, Callable
-from pykal_core.blocks import ControlBlock
+from pykal_core.blocks import DSBlock
 
 
 class Jacobian:
@@ -9,7 +9,7 @@ class Jacobian:
     @classmethod
     def _matrix_jacobian_wrt_x_u_t(
         cls,
-        sys: ControlBlock.DSBlock,
+        sys: DSBlock,
         func: Callable,
         xk: NDArray,
         uk: NDArray,
@@ -118,7 +118,7 @@ class Jacobian:
 
     @staticmethod
     def wrt_x(
-        sys: ControlBlock.DSBlock,
+        sys: DSBlock,
         func: Callable,
         epsilon: float = 1e-6,
     ) -> Callable:
@@ -146,7 +146,7 @@ class Jacobian:
 
     @staticmethod
     def wrt_u(
-        sys: ControlBlock.DSBlock,
+        sys: DSBlock,
         func: Callable,
         epsilon: float = 1e-6,
     ) -> Callable:
@@ -174,7 +174,7 @@ class Jacobian:
 
     @staticmethod
     def wrt_t(
-        sys: ControlBlock.DSBlock,
+        sys: DSBlock,
         func: Callable,
         epsilon: float = 1e-6,
     ) -> Callable:
