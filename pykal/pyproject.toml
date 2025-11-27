@@ -6,9 +6,9 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pykal_core"
+name = "pykal"
 version = "0.1"
-description = "pykal_core is a Python library for modeling general control systems."
+description = "pykal is a Python library for modeling general control systems."
 requires-python = ">=3.12"
 license = "MIT"
 authors = [
@@ -66,5 +66,5 @@ addopts = "--doctest-modules"
 doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS"]
 
 [tool.setuptools]
-package-dir = {"" = "."}  # Tells setuptools: root package is inside ./pykal_core/
-packages = ["pykal_core"]   
+package-dir = {"" = "."}  # Tells setuptools: root package is inside ./pykal/
+packages = ["pykal"]   

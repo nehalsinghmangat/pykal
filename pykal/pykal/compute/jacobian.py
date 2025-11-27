@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.typing import NDArray
 from typing import Union, Callable
-from pykal_core.blocks import DSBlock
+from pykal.block_dynamical_system import BlockDynamicalSystem as BlockDS
 
 
 class Jacobian:
@@ -9,7 +9,7 @@ class Jacobian:
     @classmethod
     def _matrix_jacobian_wrt_x_u_t(
         cls,
-        sys: DSBlock,
+        sys: BlockDS,
         func: Callable,
         xk: NDArray,
         uk: NDArray,
@@ -118,7 +118,7 @@ class Jacobian:
 
     @staticmethod
     def wrt_x(
-        sys: DSBlock,
+        sys: BlockDS,
         func: Callable,
         epsilon: float = 1e-6,
     ) -> Callable:
@@ -146,7 +146,7 @@ class Jacobian:
 
     @staticmethod
     def wrt_u(
-        sys: DSBlock,
+        sys: BlockDS,
         func: Callable,
         epsilon: float = 1e-6,
     ) -> Callable:
@@ -174,7 +174,7 @@ class Jacobian:
 
     @staticmethod
     def wrt_t(
-        sys: DSBlock,
+        sys: BlockDS,
         func: Callable,
         epsilon: float = 1e-6,
     ) -> Callable:

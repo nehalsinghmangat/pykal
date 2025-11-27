@@ -1,10 +1,12 @@
 import numpy as np
 from numpy.typing import NDArray, ArrayLike
 import inspect
+from collections import ChainMap
 from typing import (
     Any,
     Callable,
     Optional,
+    Mapping,
     get_type_hints,
     get_origin,
     Sequence,
@@ -17,82 +19,88 @@ from typing import (
 
 
 class SafeIO:
-    """
-    Validated interface for system function registration and safe function dispatch.
-    """
 
     _ALIASES_FOR_X = {"x", "xk", "state", "x_vec"}
     _ALIASES_FOR_U = {"u", "uk", "input", "control", "u_vec"}
     _ALIASES_FOR_T = {"t", "tk", "time"}
 
     @staticmethod
-    def _validate_string_sequence(names: Optional[List[str]]) -> List:
-        """
-        Validate that `names` is a list.
-        """
-
-        if names is None:
-            return []
-
-        if not isinstance(names, list):
-            raise TypeError(f"{names} must be a list!")
-
-        if not all(isinstance(v, str) for v in names):
-            raise TypeError(f"All elements in {names} must be strings")
-        return names
-
+    def as_col(v: NDArray) -> NDArray:
+        v = np.asarray(v)
+        if v.ndim == 1:
+            return v.reshape(-1, 1)
+        if v.ndim == 2:
+            if v.shape[1] == 1:
+                return v
+            if v.shape[0] == 1:
+                return v.T
+        raise ValueError(f"Expected vector-like array; got shape {v.shape}")
+    
     @staticmethod
-    def _is_ndarray_or_nparray(hint: Any) -> bool:
-        """
-        Returns True if `hint` is a NDArray or np.array
-        """
-        return hint is NDArray or hint is np.array
-
-    @staticmethod
-    def _is_float(hint: Any) -> bool:
-        """
-        Returns True if `hint` is a float
-        """
-        return hint is float
-
-    @staticmethod
-    def _validate_func_ndarray_output_shape(
-        func: Callable, result: Any, n: int, m: int
-    ) -> NDArray:
-        """
-        Enforce that the result of a function is an NDArray with shape (n, m).
-        """
-        if not isinstance(result, np.ndarray):
-            raise TypeError(
-                f"Function `{func.__name__}` must return a NumPy ndarray, got {type(result)}"
-            )
-        if result.shape != (n, m):
-            raise ValueError(
-                f"Function `{func.__name__}` must return shape ({n}, {m}), got {result.shape}"
-            )
-        return result
+    def same_orientation(v_col: NDArray, like: NDArray) -> NDArray:
+        like = np.asarray(like)
+        if like.ndim == 1:
+            return v_col.reshape(-1)
+        if like.ndim == 2 and like.shape[0] == 1:
+            return v_col.T
+        return v_col    
 
     @classmethod
-    def _validate_func_signature(cls, func: Callable) -> Callable:
-        """
-        Validates the input signature of a user-defined function
-        using aliases from the given instance.
+    def smart_call(
+        cls,
+        func: Callable[..., Any],
+        x: Optional[np.ndarray] = None,
+        t: Optional[float] = None,
+        kwargs_dict: Optional[Dict] = None,
+    ):
+        sig = inspect.signature(func)
+        params = sig.parameters
+        pool: dict[str, Any] = {}
+        if kwargs_dict:
+            pool.update(kwargs_dict)
 
-        Parameters
-        ----------
-        func : Callable
-            The function to validate.
+        def first_match(aliases: set[str]) -> str | None:
+            for name in params:
+                if name in aliases:
+                    return name
+            return None
 
+        # Route x/t to the callee’s actual parameter names if present
+        if x is not None:
+            name_x = first_match(cls._ALIASES_FOR_X)
+            if name_x and name_x not in pool:
+                pool[name_x] = x
+        if t is not None:
+            name_t = first_match(cls._ALIASES_FOR_T)
+            if name_t and name_t not in pool:
+                pool[name_t] = t
 
-        """
-        # hints = get_type_hints(func)
-        # sig = inspect.signature(func)
+        # Build positional list for any positional-only params (declared with '/')
+        pos_args: list[Any] = []
+        for name, p in params.items():
+            if p.kind is inspect.Parameter.POSITIONAL_ONLY and name in pool:
+                pos_args.append(pool.pop(name))
 
-        # alias_x = set(cls._ALIASES_FOR_X)
-        # alias_t = set(cls._ALIASES_FOR_T)
+        # Build kwargs for positional-or-keyword and keyword-only params
+        call_kwargs: dict[str, Any] = {}
+        for name, p in params.items():
+            if p.kind in (
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                inspect.Parameter.KEYWORD_ONLY,
+            ):
+                if name in pool:
+                    call_kwargs[name] = pool.pop(name)
 
-        return func
+        # Pass through unknown keys only if func accepts **kwargs
+        if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
+            call_kwargs.update(pool)  # remaining names
+        # else: drop leftovers silently
 
+        # Validate duplicates/misbindings, then call
+        bound = sig.bind_partial(*pos_args, **call_kwargs)
+        out = func(*bound.args, **bound.kwargs)
+
+        return out    
     @staticmethod
     def _standardize_time_input_to_linspace(
         t_vector: Optional[ArrayLike],
@@ -212,6 +220,43 @@ class SafeIO:
             raise ValueError("Provide one of: t_vector; t_span and dt; or tk and dt.")
 
     @staticmethod
+    def merge_named_params(
+            func_params: Optional[Mapping[str, Dict[str, Any]]],
+            *,
+            strict: bool = False
+        ) -> tuple[dict[str, Any], dict[str, str]]:
+            """
+            Merge a dict of dicts preserving insertion order precedence.
+            Later (rightmost) names have higher precedence.
+
+            Returns (merged, provenance).
+            """
+            func_params = func_params or {}
+            names = list(func_params.keys())  # insertion order preserved
+
+            # STRICT: complain if the same key appears in multiple sub-dicts
+            if strict:
+                seen_from: dict[str, str] = {}
+                for name in names:
+                    for k in func_params[name].keys():
+                        if k in seen_from:
+                            raise ValueError(f"key '{k}' appears in both '{seen_from[k]}' and '{name}'")
+                        seen_from[k] = name
+
+            # Build a view where later names override earlier ones
+            view = ChainMap(*[func_params[n] for n in reversed(names)])
+            merged: Dict[str, Any] = dict(view)
+
+            # Provenance: who set each winning key
+            provenance: Dict[str, str] = {}
+            for k in merged:
+                for name in reversed(names):  # check from highest precedence
+                    if k in func_params[name]:
+                        provenance[k] = name
+                        break
+
+            return merged, provenance
+    @staticmethod
     def _standardize_make_time_windows(
         t_linspace: NDArray[np.float64],
         *,
@@ -323,60 +368,3 @@ class SafeIO:
             windows.append(t_linspace[start:end])
 
         return windows
-
-    @classmethod
-    def smart_call(
-        cls,
-        func: Callable[..., Any],
-        x: Optional[np.ndarray] = None,
-        t: Optional[float] = None,
-        kwargs_dict: Optional[Dict] = None,
-    ):
-        sig = inspect.signature(func)
-        params = sig.parameters
-        pool: dict[str, Any] = {}
-        if kwargs_dict:
-            pool.update(kwargs_dict)
-
-        def first_match(aliases: set[str]) -> str | None:
-            for name in params:
-                if name in aliases:
-                    return name
-            return None
-
-        # Route x/t to the callee’s actual parameter names if present
-        if x is not None:
-            name_x = first_match(cls._ALIASES_FOR_X)
-            if name_x and name_x not in pool:
-                pool[name_x] = x
-        if t is not None:
-            name_t = first_match(cls._ALIASES_FOR_T)
-            if name_t and name_t not in pool:
-                pool[name_t] = t
-
-        # Build positional list for any positional-only params (declared with '/')
-        pos_args: list[Any] = []
-        for name, p in params.items():
-            if p.kind is inspect.Parameter.POSITIONAL_ONLY and name in pool:
-                pos_args.append(pool.pop(name))
-
-        # Build kwargs for positional-or-keyword and keyword-only params
-        call_kwargs: dict[str, Any] = {}
-        for name, p in params.items():
-            if p.kind in (
-                inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                inspect.Parameter.KEYWORD_ONLY,
-            ):
-                if name in pool:
-                    call_kwargs[name] = pool.pop(name)
-
-        # Pass through unknown keys only if func accepts **kwargs
-        if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
-            call_kwargs.update(pool)  # remaining names
-        # else: drop leftovers silently
-
-        # Validate duplicates/misbindings, then call
-        bound = sig.bind_partial(*pos_args, **call_kwargs)
-        out = func(*bound.args, **bound.kwargs)
-
-        return out

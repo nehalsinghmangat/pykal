@@ -1,15 +1,17 @@
 import numpy as np
 from numpy.typing import NDArray, ArrayLike
-from typing import Callable, Dict, Optional, List, Literal
+from numpy.random import Generator
+from typing import Any,Callable, Dict, Optional, List, Literal, Tuple, Mapping
+from pykal import safeio
 from scipy.integrate import solve_ivp
-from pykal_core.utils.control_system.safeio import SafeIO
-from pykal_core.blocks import DSBlock
+from pykal.safeio import SafeIO
+from pykal.block_dynamical_system import BlockDynamicalSystem as BlockDS
 
 
 class Simulation:
     @staticmethod
     def of_dynamical_system_block(
-        block: DSBlock,
+        block: BlockDS,
         *,
         f: Optional[Callable] = None,
         h: Optional[Callable] = None,
@@ -20,8 +22,9 @@ class Simulation:
         dt: Optional[float] = None,
         t_vector: Optional[NDArray] = None,
         tk_in_sim: Optional[float] = None,
-        kwarg_dict: Optional[Dict[str, ArrayLike]] = None,
-        rng_seed: Optional[int] = 42,
+        func_params: Optional[Mapping[str, Dict[str, Any]]] = None,
+        param_params: Optional[Mapping[str, Dict[str, Any]]] = None,            
+        rng: Optional[Generator] = None,
     ):
         # ---- Standardize Inputs --------------------------------------------------------
         t_linspace = SafeIO._standardize_time_input_to_linspace(
@@ -38,6 +41,7 @@ class Simulation:
                 output_dict[k] = [v] * len(t_linspace)
 
             return output_dict
+        
         def key_values_at_tk(input_dict: Dict, tk: float, t_linspace: NDArray) -> Dict[str, object]:
             def index_of_t(t: float, t_linspace: NDArray) -> int:
                 i = int(np.searchsorted(t_linspace, t, side="right") - 1)
@@ -53,9 +57,13 @@ class Simulation:
                 out[k] = val
             return out
 
+        merged_params, _ = SafeIO.merge_named_params(func_params,strict=True)
+
+        merged_params["param_params"] = param_params
+
         kwarg_dict_over_time = (
-            standardize_input_dictionary(kwarg_dict, t_linspace)
-            if kwarg_dict is not None
+            standardize_input_dictionary(merged_params, t_linspace)
+            if func_params is not None
             else {}
         )
 
@@ -66,16 +74,16 @@ class Simulation:
             f = block.f
             # ---- Simulate Y with no dynamics --------------------------------------------------------
             if f.__name__ == "zero_dynamics":
-                if tk is not None:  # return single step h value
+                if tk_in_sim is not None:  # return single step h value
                     return SafeIO.smart_call(
                         h,
-                        t=tk,
+                        t=tk_in_sim,
                         kwargs_dict=key_values_at_tk(
-                            kwarg_dict_over_time, tk, t_linspace
+                            kwarg_dict_over_time, tk_in_sim, t_linspace
                         ),
                     )
                 else:  # simulate over time
-                    Y_list = []
+                    Y = []
                     for tk in t_linspace:
                         yk = SafeIO.smart_call(
                             h,
@@ -85,7 +93,7 @@ class Simulation:
                             ),
                         )
                         yk = np.asarray(yk).reshape(-1)  # ensure (m,)
-                        Y_list.append(yk)
+                        Y.append(yk)
                     return Y
 
             else:
@@ -151,9 +159,8 @@ class Simulation:
                         f'{block.sys_type} must be one of "cti", "ctv", "dti", "dtv"'
                     )
 
-            # --- Noise ----------------------------------------------------------
-            rng = np.random.default_rng(rng_seed)
-
+            if rng is None:
+                 rng = np.random.default_rng(42)
             # ---- Add process noise --------------------------------------------------------
 
             if Q is None:

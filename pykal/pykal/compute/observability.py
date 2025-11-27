@@ -2,14 +2,14 @@ import pandas as pd
 import numpy as np
 from numpy.typing import NDArray
 from typing import Callable, Union, Optional, Sequence
-from pykal_core.blocks import DSBlock
+from pykal.block_dynamical_system import BlockDynamicalSystem as BlockDS
 
 
 class Observability:
     @classmethod
     def matrix(
         cls,
-        sys: DSBlock,
+        sys: BlockDS,
         *,
         x0: NDArray,
         t_span: Optional[tuple[float, float]] = None,
@@ -138,7 +138,7 @@ class Observability:
     @classmethod
     def grammian(
         cls,
-        sys: DSBlock,
+        sys: BlockDS,
         *,
         x0: NDArray,
         t_span: Optional[tuple[float, float]] = None,
@@ -210,7 +210,7 @@ class Observability:
     @classmethod
     def CRB(
         cls,
-        sys: DSBlock,
+        sys: BlockDS,
         *,
         x0: NDArray,
         t_span: Optional[tuple[float, float]] = None,
@@ -266,7 +266,7 @@ class Observability:
     @classmethod
     def of_states_from_grammian_nullspace(
         cls,
-        sys: DSBlock,
+        sys: BlockDS,
         *,
         W: NDArray,
         tol: float = 1e-10,
@@ -312,7 +312,7 @@ class Observability:
     @classmethod
     def of_states_over_time_from_grammian_via_callable(
         cls,
-        sys: DSBlock,
+        sys: BlockDS,
         *,
         x0: NDArray,
         grammian_to_scores_func: Callable,
@@ -389,7 +389,7 @@ class Observability:
     @classmethod
     def of_states_from_P_projection_onto_canonical_basis(
         cls,
-        sys: DSBlock,
+        sys: BlockDS,
         *,
         P0: NDArray,
         Pk: NDArray,
@@ -436,7 +436,7 @@ class Observability:
     @classmethod
     def of_states_from_P_spread_across_canonical_basis(
         cls,
-        sys: DSBlock,
+        sys: BlockDS,
         *,
         P0: NDArray,
         Pk: NDArray,
@@ -482,7 +482,7 @@ class Observability:
     @classmethod
     def of_states_over_time_from_P_series_via_callable(
         cls,
-        sys: DSBlock,
+        sys: BlockDS,
         *,
         P_series: pd.Series,
         method: Callable,
