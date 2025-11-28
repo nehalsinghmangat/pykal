@@ -41,7 +41,7 @@ class DynamicalSystem:
     def state_name(self, state_name: Optional[str]) -> None:
         self._state_name = state_name
 
-    def smart_call(
+    def _smart_call(
         self,
         func: Callable[..., Any],
         param_dict: Dict[str, Any],
@@ -76,8 +76,8 @@ class DynamicalSystem:
         param_dict: Dict[str, Any],
     ) -> Any:
         if self.f is None:
-            return self.smart_call(self.h, param_dict)
+            return self._smart_call(self.h, param_dict)
 
         param_dict = dict(param_dict) # copy param_dict so we dont risk mutation outside of this method
-        param_dict[self.state_name] = self.smart_call(self.f, param_dict) 
-        return self.smart_call(self.h, param_dict)
+        param_dict[self.state_name] = self._smart_call(self.f, param_dict) 
+        return self._smart_call(self.h, param_dict)
