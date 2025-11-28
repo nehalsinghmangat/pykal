@@ -74,10 +74,14 @@ class DynamicalSystem:
         self,
         *,
         param_dict: Dict[str, Any],
+        return_state: bool=False
     ) -> Any:
         if self.f is None:
             return self._smart_call(self.h, param_dict)
 
-        param_dict = dict(param_dict) # copy param_dict so we dont risk mutation outside of this method
-        param_dict[self.state_name] = self._smart_call(self.f, param_dict) 
-        return self._smart_call(self.h, param_dict)
+        param_dict_copy = dict(param_dict) # copy param_dict so we dont risk mutation outside of this method
+        param_dict_copy[self.state_name] = self._smart_call(self.f, param_dict)
+        if return_state:
+            return self._smart_call(self.f, param_dict),self._smart_call(self.h, param_dict_copy)
+        else:
+            return self._smart_call(self.h, param_dict_copy)
