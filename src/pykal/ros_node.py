@@ -10,6 +10,11 @@ from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 from rclpy.callback_groups import ReentrantCallbackGroup
 from numpy.typing import NDArray
 
+from pykal.ros2py_py2ros import ROS2PY_DEFAULT, PY2ROS_DEFAULT
+
+SubTuple = Tuple[str, type, str]  # (topic, msg_type, arg_name)
+PubTuple = Tuple[str, type, str]  # (return_key, msg_type, topic)
+
 
 class ROSNode:
     def __init__(
@@ -17,12 +22,8 @@ class ROSNode:
         *,
         node_name: str,
         callback: Callable[..., Dict[str, NDArray]],
-        subscribes_to: Optional[Sequence[
-            Tuple[str, type, Optional[Callable[[Any], NDArray]], str]
-        ]] = None,
-        publishes_to: Optional[Sequence[
-            Tuple[str, Optional[Callable[[NDArray], Any]], type, str]
-        ]] = None,
+        subscribes_to: Optional[Sequence[SubTuple]] = None,
+        publishes_to: Optional[Sequence[PubTuple]] = None,
         rate_hz: float = 10.0,
         use_single_threaded_executor: bool = True,
         qos_profile: Optional[QoSProfile] = None,
@@ -53,26 +54,29 @@ class ROSNode:
         )
 
         # -------- Staleness (per-arg config only) --------
+        # e.g. {"uk": {"after": 0.5, "policy": "zero"}, ...}
         self._stale_cfg = dict(stale_config or {})
 
         # -------- Normalize subscriptions (config only) --------
-        self._subs: List[
-            Tuple[str, type, Optional[Callable[[Any], NDArray]], str]
-        ] = []
-
+        self._subs: List[Tuple[str, type, Callable[[Any], NDArray], str]] = []
         for tup in (subscribes_to or []):
             try:
-                topic, msg_type, ros2py, arg_name = tup
+                topic, msg_type, arg_name = tup
             except Exception:
                 raise ValueError(
-                    "Each subscription must be (topic_name, msg_type, ros2py_converter, arg_name)"
+                    "Each subscription must be (topic_name, msg_type, arg_name)"
                 )
             if not isinstance(msg_type, type):
                 raise TypeError(f"msg_type for '{tup}' must be a class")
-            if ros2py is not None and not callable(ros2py):
-                raise TypeError(f"ros2py converter for '{topic}' must be callable or None")
             if not isinstance(arg_name, str) or not arg_name:
-                raise TypeError(f"arg_name must be a non-empty string")
+                raise TypeError("arg_name must be a non-empty string")
+
+            ros2py = ROS2PY_DEFAULT.get(msg_type)
+            if ros2py is None:
+                raise TypeError(
+                    f"No default ros2py converter for msg_type {msg_type.__name__} "
+                    f"on topic '{topic}'. Add one to ROS2PY_DEFAULT."
+                )
 
             self._subs.append((topic, msg_type, ros2py, arg_name))
 
@@ -82,23 +86,25 @@ class ROSNode:
             raise ValueError(f"Duplicate subscribe topics: {dup}")
 
         # -------- Normalize publications (config only) --------
-        self._pubs: List[
-            Tuple[str, Optional[Callable[[NDArray], Any]], type, str]
-        ] = []
-
+        self._pubs: List[Tuple[str, Callable[[NDArray], Any], type, str]] = []
         for tup in (publishes_to or []):
             try:
-                return_key, py2ros, msg_type, topic = tup
+                return_key, msg_type, topic = tup
             except Exception:
                 raise ValueError(
-                    "Each publication must be (return_key, py2ros_converter, msg_type, topic)"
+                    "Each publication must be (return_key, msg_type, topic)"
                 )
             if not isinstance(return_key, str) or not return_key:
                 raise TypeError("return_key must be a non-empty string")
             if not isinstance(msg_type, type):
                 raise TypeError(f"msg_type for {tup} must be a class")
-            if py2ros is not None and not callable(py2ros):
-                raise TypeError(f"py2ros converter for '{topic}' must be callable or None")
+
+            py2ros = PY2ROS_DEFAULT.get(msg_type)
+            if py2ros is None:
+                raise TypeError(
+                    f"No default py2ros converter for msg_type {msg_type.__name__} "
+                    f"on topic '{topic}'. Add one to PY2ROS_DEFAULT."
+                )
 
             self._pubs.append((return_key, py2ros, msg_type, topic))
 
@@ -139,10 +145,6 @@ class ROSNode:
         # --- Create subscriptions ---
         self._sub_map.clear()
         for topic, msg_type, ros2py, arg_name in self._subs:
-            if ros2py is None:
-                raise TypeError(
-                    f"No ros2py converter provided for topic '{topic}'"
-                )
             self._sub_map[topic] = (msg_type, ros2py, arg_name)
 
             node.create_subscription(
@@ -156,10 +158,6 @@ class ROSNode:
         # --- Create publishers ---
         self._pub_map.clear()
         for (return_key, py2ros, msg_type, topic) in self._pubs:
-            if py2ros is None:
-                raise TypeError(
-                    f"No py2ros converter for topic '{topic}'"
-                )
             pub = node.create_publisher(msg_type, topic, self._qos)
             self._pub_map[return_key] = (py2ros, msg_type, topic, pub)
 
@@ -215,10 +213,9 @@ class ROSNode:
             inputs_snapshot: Dict[str, NDArray] = {}
 
             for arg_name, arr in self._inputs_by_arg.items():
-                # Per-argument config
                 cfg = self._stale_cfg.get(arg_name, {})
-                after = cfg.get("after", None)            # None = never stale
-                policy = cfg.get("policy", "drop")        # default action
+                after = cfg.get("after", None)     # None = never stale
+                policy = cfg.get("policy", "drop") # default action
 
                 is_stale = False
                 if after is not None:
@@ -287,11 +284,6 @@ class ROSNode:
     def stop(self):
         """
         Stop spinning the executor, but DO NOT destroy the underlying node.
-
-        After stop():
-          - No callbacks/timers will run.
-          - The node is still registered in the ROS graph.
-          - You can call start() again to resume spinning.
         """
         if self._executor:
             try:
@@ -307,16 +299,9 @@ class ROSNode:
     def destroy(self):
         """
         Remove the underlying rclpy.Node from the ROS graph.
-
-        - Stops executor if running.
-        - Calls destroy_node() on the Node.
-        - Clears publishers/subscriptions and caches.
-        - Does NOT call rclpy.shutdown().
         """
-        # First, stop spinning
         self.stop()
 
-        # Destroy the node
         if self._node:
             try:
                 self._node.destroy_node()
@@ -324,7 +309,6 @@ class ROSNode:
                 pass
             self._node = None
 
-        # Clear ROS-related maps and caches
         self._pub_map.clear()
         self._sub_map.clear()
         self._inputs_by_arg.clear()
