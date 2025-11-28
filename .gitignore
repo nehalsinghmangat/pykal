@@ -6,7 +6,6 @@
 **/build/
 **/install/
 **/log/
-**/src/
 
 # Python bytecode and caches
 **/__pycache__/
