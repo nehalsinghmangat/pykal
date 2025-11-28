@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.typing import NDArray
 from typing import Any, Dict, List
-
+import rclpy
 from geometry_msgs.msg import (
     Vector3,
     Quaternion,
@@ -18,6 +18,8 @@ from geometry_msgs.msg import (
     Accel,
     AccelStamped,
 )
+
+from turtlesim.msg import Pose
 from nav_msgs.msg import Odometry, Path
 from sensor_msgs.msg import (
     Imu,
@@ -876,8 +878,56 @@ def py2ros_uint8_multiarray(arr: NDArray) -> UInt8MultiArray:
     msg.data = np.asarray(arr, dtype=np.uint8).ravel().tolist()
     return msg
 
+
+def ros2py_pose(msg: Pose) -> np.ndarray:
+    """
+    Convert a ROS 2 turtlesim/Pose message into a NumPy array.
+
+    turtlesim/Pose fields:
+        float32 x
+        float32 y
+        float32 theta
+        float32 linear_velocity
+        float32 angular_velocity
+
+    Returns
+    -------
+    np.ndarray of shape (3,)
+        [x, y, theta]
+    """
+    return np.array(
+        [msg.x, msg.y, msg.theta],
+        dtype=float
+    )
+
+def py2ros_pose(x) -> Pose:
+    """
+    Convert [x, y, theta] into turtlesim/Pose.
+    Accepts shapes (3,), (3,1), (1,3), or anything squeeze-able to >=3 elements.
+    """
+    arr = np.asarray(x, dtype=float).squeeze()
+
+    # Handle common column/row vector cases
+    if arr.ndim == 2 and 1 in arr.shape:
+        arr = arr.reshape(-1)
+
+    if arr.ndim != 1 or arr.size < 3:
+        raise ValueError(
+            f"pose_py2ros expected at least 3 elements for [x,y,theta]; "
+            f"got shape {np.asarray(x).shape} after squeeze -> {arr.shape} (size={arr.size})."
+        )
+
+    msg = Pose()
+    msg.x = float(arr[0])
+    msg.y = float(arr[1])
+    msg.theta = float(arr[2])
+    msg.linear_velocity = 0.0
+    msg.angular_velocity = 0.0
+    return msg
+
 # Map ROS msg type -> msg -> np.ndarray
 ROS2PY_DEFAULT = {
+    Pose:ros2py_pose,
     Twist: ros2py_twist,
     PoseStamped: ros2py_pose_stamped,
     TransformStamped: ros2py_transform_stamped,
@@ -899,6 +949,7 @@ ROS2PY_DEFAULT = {
 
 # Map ROS msg type -> (np.ndarray, **kwargs) -> msg
 PY2ROS_DEFAULT = {
+    Pose:py2ros_pose,
     Twist: py2ros_twist,
     PoseStamped: py2ros_pose_stamped,
     TransformStamped: py2ros_transform_stamped,
