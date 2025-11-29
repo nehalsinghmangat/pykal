@@ -8,7 +8,7 @@
   
 To get started, or to explore what this framework has to offer, click here: [Quickstart](https://pykal.readthedocs.io/en/latest/quickstart_index.html).
 
-For a 22 second video describing this framework's intended workflow for, please click here: [SAIL (Summit for AI Institutes Leadership) 2025 -- Presenting pykal](https://youtu.be/5GbVHo6QZrw).
+For a 22 second video describing this framework's intended workflow for, please click here: [SAIL 2025 -- Presenting pykal](https://youtu.be/5GbVHo6QZrw).
 
 ---
 ## Turtlebot: A journey of four steps
