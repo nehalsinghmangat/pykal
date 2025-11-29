@@ -2,9 +2,9 @@
 
 # pykal: From Theory to Python to ROS
 
-> _"Cross a river once, swim; cross a river twice, find a boat; cross a river thrice, build a bridge."_  — old Punjabi saying
+> _"Cross a river once, swim; cross a river a thousand times, build a bridge."_  — Punjabi saying
 
-pykal is a Python development framework that bridges the chasm between theoretical control systems and their implementation in hardware. Designed for hobbyists, students, and academics alike, this framework won't cure cancer, but it can do the next best thing: make building robots easier.
+**pykal*** is a Python development framework that bridges the chasm between theoretical control systems and their implementation in hardware. Designed for hobbyists, students, and academics alike, this framework won't cure cancer, but it can do the next best thing: make controlling robots easier.
 
 To get started, or to explore what this framework has to offer, click here: [Quickstart](https://pykal.readthedocs.io/en/latest/quickstart_index.html).
 
@@ -15,22 +15,22 @@ For a 3-minute video describing the motivation behind this framework and ideas f
 <table>
   <tr>
     <td align="center">
-      <img src="docs/source/_static/turtlebot.svg" alt="TurtleBot Overview" width="400"/><br/>
+      <img src="docs/source/_static/tikz/turtlebot/turtlebot.svg" alt="TurtleBot Overview" width="400"/><br/>
     </td>
     <td align="center">
-      <img src="docs/source/_static/turtlesim_software.gif" alt="Turtle Software" width="200"/><br/>
+      <img src="docs/source/_static/gif/turtlesim_software.gif" alt="Turtle Software" width="200"/><br/>
     </td>
     <td align="center">
-      <img src="docs/source/_static/turtlesim_simulation.gif" alt="Turtle Simulation" width="200"/><br/>
+      <img src="docs/source/_static/gif/turtlesim_simulation.gif" alt="Turtle Simulation" width="200"/><br/>
     </td>
     <td align="center">
-      <img src="docs/source/_static/turtlesim_hardware.gif" alt="Turtle Hardware" width="200"/><br/>
+      <img src="docs/source/_static/gif/turtlesim_hardware.gif" alt="Turtle Hardware" width="200"/><br/>
     </td>
   </tr>
 </table>
 
 <p align="center">
-  <img src="docs/source/_static/labels_for_steps_from_theory_to_hardware.png" alt="Step Labels" width="800"/>
+  <img src="docs/source/_static/misc/labels_for_steps_from_theory_to_hardware.png" alt="Step Labels" width="800"/>
 </p>
 
 
