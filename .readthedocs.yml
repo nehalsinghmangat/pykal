@@ -17,5 +17,5 @@ sphinx:
 # Install your package from the local path with dev dependencies
 python:
   install:
-    - path: ./pykal_core/
+    - path: .
       extra_requirements: ["dev"]
