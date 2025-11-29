@@ -8,7 +8,7 @@
 
 To get started, or to explore what this framework has to offer, click here: [Quickstart](https://pykal.readthedocs.io/en/latest/quickstart_index.html).
 
-For a 3-minute video describing the motivation behind this framework and ideas for its future, click here: [video](video).
+For a 17 second video describing this framework's intended workflow for, please click here: [video](https://pykal).
 
 ---
 ## Turtlebot: A journey of four steps
