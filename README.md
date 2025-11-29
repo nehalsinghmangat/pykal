@@ -4,8 +4,8 @@
 
 > _"Cross a river once, swim; cross a river a thousand times, build a bridge."_  — Punjabi saying
 
-**pykal*** is a Python development framework that bridges the chasm between theoretical control systems and their implementation in hardware. Designed for hobbyists, students, and academics alike, this framework won't cure cancer, but it can do the next best thing: make controlling robots easier.
-  
+**pykal** is a Python development framework that bridges the chasm between theoretical control systems and their implementation in hardware. Designed for hobbyists, students, and academics alike, this framework won't cure cancer, but it can do the next best thing: make controlling robots easier.
+
 To get started, or to explore what this framework has to offer, click here: [Quickstart](https://pykal.readthedocs.io/en/latest/quickstart_index.html).
 
 For a 22 second video describing this framework's intended workflow for, please click here: [SAIL (Summit for AI Institutes Leadership) 2025 -- Presenting pykal](https://youtu.be/5GbVHo6QZrw).
