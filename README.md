@@ -6,7 +6,7 @@
 
 **pykal** is a Python development framework that bridges the chasm between theoretical control systems and their implementation in hardware. Designed for hobbyists, students, and academics alike, this framework won't cure cancer, but it can do the next best thing: make controlling robots easier.
 
-To get started, or to explore what this framework has to offer, click here: [https://pykal.readthedocs.io](https://pykal.readthedocs.io).
+To get started, or to explore what this framework has to offer, click here: [pykal Documentation](https://pykal.readthedocs.io).
 
 For a 22 second video describing this framework's intended workflow for, please click here: [SAIL 2025 -- Presenting pykal](https://youtu.be/5GbVHo6QZrw).
 
