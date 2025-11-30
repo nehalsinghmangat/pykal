@@ -21,16 +21,6 @@ class KF:
         R: Callable,
         R_params: Dict,                                    
     ) -> Tuple[NDArray, NDArray]:
-        """
-        Extended Kalman Filter step (predict + update) using column-vector convention internally.
-
-        Shapes:
-            x̂_k : (n, 1)
-            P_k  : (n, n)
-            y_k  : (m, 1)
-            F,H  : (n,n), (m,n)
-            Q,R  : (n,n), (m,m)
-        """
 
         # extract state variables
         _, Pk = xhat_P

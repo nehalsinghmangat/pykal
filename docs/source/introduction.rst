@@ -19,15 +19,15 @@ For a 22 second video describing this framework's intended workflow, see the `SA
 
    <div style="display: flex; justify-content: space-around; align-items: flex-start; gap: 20px; margin-top: 1em; margin-bottom: 1em;">
      <figure style="width: 30%; text-align: center;">
-       <img src="_static/turtlesim_software.gif" alt="Turtle Software" style="width: 100%;">
+       <img src="_static/gif/turtlesim_software.gif" alt="Turtle Software" style="width: 100%;">
        <figcaption>Software</figcaption>
      </figure>
      <figure style="width: 30%; text-align: center;">
-       <img src="_static/turtlesim_simulation.gif" alt="Turtle Simulation" style="width: 100%;">
+       <img src="_static/gif/turtlesim_simulation.gif" alt="Turtle Simulation" style="width: 100%;">
        <figcaption>Simulation</figcaption>
      </figure>
      <figure style="width: 30%; text-align: center;">
-       <img src="_static/turtlesim_hardware.gif" alt="Turtle Hardware" style="width: 100%;">
+       <img src="_static/gif/turtlesim_hardware.gif" alt="Turtle Hardware" style="width: 100%;">
        <figcaption>Hardware</figcaption>
      </figure>
    </div>
