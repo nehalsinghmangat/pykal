@@ -10,12 +10,10 @@ build:
     - graphviz
     - pandoc
 
-# Point Sphinx at the right conf.py
 sphinx:
   configuration: docs/source/conf.py
 
-# Install your package from the local path with dev dependencies
 python:
   install:
     - path: .
-      extra_requirements: ["dev"]
+      extra_requirements: ["docs"]
