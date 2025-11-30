@@ -10,12 +10,10 @@ build:
     - graphviz
     - pandoc
 
-# Point Sphinx at the right conf.py
 sphinx:
   configuration: docs/source/conf.py
 
-# Install your package from the local path with dev dependencies
 python:
   install:
-    - path: ./pykal_core/
-      extra_requirements: ["dev"]
+    - path: .
+      extra_requirements: ["docs"]
