@@ -1,9 +1,3 @@
-pykal: From Theory to Python to ROS
-===================================
-**pykal** is a Python development framework that bridges the chasm between theoretical control systems and their implementation in hardware. Designed for hobbyists, students, and academics alike, this framework won't cure cancer, but it can do the next best thing: make controlling robots easier.
-
-To access the GitHub repo and watch for the official release, click here: `pykal repo <https://github.com/nehalsinghmangat/pykal?tab=readme-ov-file>`_
-
 ================
 Algorithm Library
 ================
@@ -82,33 +76,10 @@ Use the filters below to search by category, algorithm type, and implementation 
      </div>
    </div>
 
+References
+==========
+
 .. bibliography::
    :all:
    :style: plain
    :list: enumerated
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-   :caption: Quick Start
-
-   getting_started/index
-   algorithm_library
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-   :caption: The pykal Pipeline
-
-   what_is_pykal/index
-   theory_to_software/index
-   software_to_simulation/index
-   simulation_to_hardware/index
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-   :caption: Examples & Reference
-
-   robot_examples/index
-   license

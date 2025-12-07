@@ -1,0 +1,338 @@
+% BibTeX file for pykal references
+%
+% Custom fields used for filtering:
+%   - keywords: algorithm type (e.g., "state-estimation", "control", "planning")
+%   - pykal_category: specific category (e.g., "kalman-filter", "pid", "mpc")
+%   - impl_pykal: path to notebook if implemented in pykal core (e.g., "notebooks/kalman_filter_demo.ipynb")
+%   - impl_turtlebot: path to notebook if implemented for turtlebot (e.g., "notebooks/kf_turtlebot.ipynb")
+%   - impl_crazyflie: path to notebook if implemented for crazyflie (e.g., "notebooks/kf_crazyflie.ipynb")
+%
+% See BIBLIOGRAPHY_QUICK_REFERENCE.md for a template and examples
+
+
+@article{kalman1960new,
+  title        = {A new approach to linear filtering and prediction problems},
+  author       = {Kalman, Rudolph Emil},
+  journal      = {Journal of Basic Engineering},
+  volume       = {82},
+  number       = {1},
+  pages        = {35--45},
+  year         = {1960},
+  publisher    = {American Society of Mechanical Engineers},
+  url          = {https://doi.org/10.1115/1.3662552},
+  keywords     = {state-estimation},
+  pykal_category = {kalman-filter},
+  impl_pykal   = {theory_to_software/estimators/kalman_filters/standard_kalman_filter.ipynb},
+  impl_turtlebot = {examples/kf_turtlebot_demo.ipynb},
+  impl_crazyflie = {},
+  note         = {Classic Kalman filter paper. Implementations available in pykal core and TurtleBot}
+}
+
+@inproceedings{julier1997new,
+  title        = {New extension of the Kalman filter to nonlinear systems},
+  author       = {Julier, Simon J and Uhlmann, Jeffrey K},
+  booktitle    = {Signal processing, sensor fusion, and target recognition VI},
+  volume       = {3068},
+  pages        = {182--193},
+  year         = {1997},
+  organization = {SPIE},
+  url          = {https://doi.org/10.1117/12.280797},
+  keywords     = {state-estimation, filtering, nonlinear},
+  pykal_category = {ukf},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Unscented Kalman Filter (UKF). Not yet implemented}
+}
+@article{potter1964new,
+  title        = {New approach to discrete filtering},
+  author       = {Potter, James E},
+  journal      = {IEEE Transactions on Aerospace and Electronic Systems},
+  volume       = {AES-2},
+  number       = {4},
+  pages        = {387--395},
+  year         = {1964},
+  publisher    = {IEEE},
+  url          = {https://doi.org/10.1109/TAES.1964.4502206},
+  keywords     = {state-estimation, filtering},
+  pykal_category = {square-root-kf},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Square Root Kalman Filter. Numerically stable covariance propagation}
+}
+
+@article{bierman1977factorization,
+  title        = {Factorization methods for discrete sequential estimation},
+  author       = {Bierman, Gerald J},
+  journal      = {Mathematics in Science and Engineering},
+  volume       = {128},
+  year         = {1977},
+  publisher    = {Academic Press},
+  url          = {https://doi.org/10.1016/S0076-5392(08)60932-7},
+  keywords     = {state-estimation, filtering},
+  pykal_category = {square-root-kf},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Comprehensive treatment of square root filtering methods}
+}
+
+@book{anderson1979optimal,
+  title        = {Optimal Filtering},
+  author       = {Anderson, Brian DO and Moore, John B},
+  year         = {1979},
+  publisher    = {Prentice-Hall},
+  url          = {https://books.google.com},
+  keywords     = {state-estimation, filtering},
+  pykal_category = {partial-update-kf},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Partial update strategy for computational efficiency in Kalman filtering}
+}
+
+@article{ziegler1942optimum,
+  title        = {Optimum settings for automatic controllers},
+  author       = {Ziegler, John G and Nichols, Nathaniel B},
+  journal      = {Transactions of the ASME},
+  volume       = {64},
+  number       = {11},
+  pages        = {759--765},
+  year         = {1942},
+  url          = {https://www.researchgate.net/publication/243565930},
+  keywords     = {control},
+  pykal_category = {pid},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Classic PID tuning method. Foundation of modern PID control}
+}
+
+@book{astrom1995pid,
+  title        = {PID controllers: theory, design, and tuning},
+  author       = {{\AA}str{\"o}m, Karl Johan and H{\"a}gglund, Tore},
+  year         = {1995},
+  publisher    = {Instrument Society of America},
+  url          = {https://www.isa.org},
+  keywords     = {control},
+  pykal_category = {pid},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Comprehensive modern treatment of PID control theory and practice}
+}
+
+@article{kalman1964linear,
+  title        = {When is a linear control system optimal?},
+  author       = {Kalman, Rudolph Emil},
+  journal      = {Journal of Basic Engineering},
+  volume       = {86},
+  number       = {1},
+  pages        = {51--60},
+  year         = {1964},
+  publisher    = {American Society of Mechanical Engineers},
+  url          = {https://doi.org/10.1115/1.3653115},
+  keywords     = {control, optimization},
+  pykal_category = {lqr},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Linear Quadratic Regulator (LQR). Foundations of optimal control}
+}
+
+@book{anderson1971linear,
+  title        = {Linear optimal control},
+  author       = {Anderson, Brian DO and Moore, John B},
+  year         = {1971},
+  publisher    = {Prentice-Hall},
+  url          = {https://books.google.com},
+  keywords     = {control, optimization},
+  pykal_category = {lqr},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Comprehensive LQR theory with Riccati equation solutions}
+}
+
+@article{mayne2000constrained,
+  title        = {Constrained model predictive control: Stability and optimality},
+  author       = {Mayne, David Q and Rawlings, James B and Rao, Christopher V and Scokaert, Pierre OM},
+  journal      = {Automatica},
+  volume       = {36},
+  number       = {6},
+  pages        = {789--814},
+  year         = {2000},
+  publisher    = {Elsevier},
+  url          = {https://doi.org/10.1016/S0005-1098(99)00214-9},
+  keywords     = {control, optimization, planning},
+  pykal_category = {mpc},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Model Predictive Control (MPC). Rigorous stability and optimality analysis}
+}
+
+@article{garcia1989model,
+  title        = {Model predictive control: Theory and practice—A survey},
+  author       = {Garcia, Carlos E and Prett, David M and Morari, Manfred},
+  journal      = {Automatica},
+  volume       = {25},
+  number       = {3},
+  pages        = {335--348},
+  year         = {1989},
+  publisher    = {Elsevier},
+  url          = {https://doi.org/10.1016/0005-1098(89)90002-2},
+  keywords     = {control, optimization},
+  pykal_category = {mpc},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Foundational MPC survey. Theory and industrial applications}
+}
+
+@article{luenberger1964observing,
+  title        = {Observing the state of a linear system},
+  author       = {Luenberger, David},
+  journal      = {IEEE Transactions on Military Electronics},
+  volume       = {8},
+  number       = {2},
+  pages        = {74--80},
+  year         = {1964},
+  publisher    = {IEEE},
+  url          = {https://doi.org/10.1109/TME.1964.4323124},
+  keywords     = {state-estimation},
+  pykal_category = {observer},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Luenberger Observer. Deterministic state estimation for linear systems}
+}
+
+@book{doyle1992feedback,
+  title        = {Feedback control theory},
+  author       = {Doyle, John C and Francis, Bruce A and Tannenbaum, Allen R},
+  year         = {1992},
+  publisher    = {Macmillan Publishing Company},
+  url          = {https://books.google.com},
+  keywords     = {control},
+  pykal_category = {h-infinity},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {H-infinity robust control. Handling model uncertainty}
+}
+
+@article{utkin1977variable,
+  title        = {Variable structure systems with sliding modes},
+  author       = {Utkin, Vadim I},
+  journal      = {IEEE Transactions on Automatic Control},
+  volume       = {22},
+  number       = {2},
+  pages        = {212--222},
+  year         = {1977},
+  publisher    = {IEEE},
+  url          = {https://doi.org/10.1109/TAC.1977.1101446},
+  keywords     = {control, nonlinear},
+  pykal_category = {sliding-mode},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Sliding Mode Control. Robust nonlinear control with discontinuous switching}
+}
+
+@article{doucet2000sequential,
+  title        = {On sequential Monte Carlo sampling methods for Bayesian filtering},
+  author       = {Doucet, Arnaud and Godsill, Simon and Andrieu, Christophe},
+  journal      = {Statistics and Computing},
+  volume       = {10},
+  number       = {3},
+  pages        = {197--208},
+  year         = {2000},
+  publisher    = {Springer},
+  url          = {https://doi.org/10.1023/A:1008935410038},
+  keywords     = {state-estimation, filtering, nonlinear},
+  pykal_category = {particle-filter},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Particle Filter (Sequential Monte Carlo). Nonlinear/non-Gaussian state estimation}
+}
+
+@article{gordon1993novel,
+  title        = {Novel approach to nonlinear/non-Gaussian Bayesian state estimation},
+  author       = {Gordon, Neil J and Salmond, David J and Smith, Adrian FM},
+  journal      = {IEE Proceedings F (Radar and Signal Processing)},
+  volume       = {140},
+  number       = {2},
+  pages        = {107--113},
+  year         = {1993},
+  publisher    = {IET},
+  url          = {https://doi.org/10.1049/ip-f-2.1993.0015},
+  keywords     = {state-estimation, filtering, nonlinear},
+  pykal_category = {particle-filter},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Bootstrap filtering. Early particle filter formulation}
+}
+
+@article{rao2003constrained,
+  title        = {Constrained state estimation for nonlinear discrete-time systems: Stability and moving horizon approximations},
+  author       = {Rao, Christopher V and Rawlings, James B and Mayne, David Q},
+  journal      = {IEEE Transactions on Automatic Control},
+  volume       = {48},
+  number       = {2},
+  pages        = {246--258},
+  year         = {2003},
+  publisher    = {IEEE},
+  url          = {https://doi.org/10.1109/TAC.2002.808470},
+  keywords     = {state-estimation, optimization, nonlinear},
+  pykal_category = {mhe},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Moving Horizon Estimation (MHE). Optimization-based state estimation}
+}
+
+@book{simon2006optimal,
+  title        = {Optimal state estimation: Kalman, H-infinity, and nonlinear approaches},
+  author       = {Simon, Dan},
+  year         = {2006},
+  publisher    = {John Wiley \& Sons},
+  url          = {https://doi.org/10.1002/0470045345},
+  keywords     = {state-estimation, filtering},
+  pykal_category = {kalman-filter},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Comprehensive modern treatment comparing Kalman, H-infinity, and nonlinear filters}
+}
+
+@book{jazwinski1970stochastic,
+  title        = {Stochastic processes and filtering theory},
+  author       = {Jazwinski, Andrew H},
+  year         = {1970},
+  publisher    = {Academic Press},
+  url          = {https://books.google.com},
+  keywords     = {state-estimation, filtering},
+  pykal_category = {kalman-filter},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Classic text on stochastic filtering. Rigorous mathematical foundations}
+}
+
+@book{thrun2005probabilistic,
+  title        = {Probabilistic robotics},
+  author       = {Thrun, Sebastian and Burgard, Wolfram and Fox, Dieter},
+  year         = {2005},
+  publisher    = {MIT Press},
+  url          = {https://mitpress.mit.edu/books/probabilistic-robotics},
+  keywords     = {state-estimation, robotics, planning},
+  pykal_category = {particle-filter},
+  impl_pykal   = {},
+  impl_turtlebot = {},
+  impl_crazyflie = {},
+  note         = {Probabilistic robotics textbook. Comprehensive coverage of filtering and SLAM}
+}

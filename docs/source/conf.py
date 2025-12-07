@@ -28,6 +28,7 @@ extensions = [
     "sphinx.ext.intersphinx",  # Link to external Sphinx docs (like NumPy)
     "sphinx_toolbox.collapse",  # Support for collapsible content blocks
     "sphinx.ext.graphviz",  # Render Graphviz diagrams in docs
+    "sphinxcontrib.bibtex",  # Bibliography support
 ]
 
 myst_enable_extensions = [
@@ -54,6 +55,11 @@ autodoc_typehints = "description"  # Move type hints from signature into docstri
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
 
+# BibTeX configuration
+bibtex_bibfiles = ["references.bib"]
+bibtex_default_style = "plain"
+bibtex_reference_style = "author_year"
+
 
 # Intersphinx mappings to other project documentation for :ref: cross-links
 intersphinx_mapping = {
@@ -70,6 +76,16 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]  # Files to ignore
 
 html_theme = "sphinx_rtd_theme"  # Theme used (ReadTheDocs theme)
 html_static_path = ["_static"]  # Static assets like CSS/JS/images
+
+# Custom CSS and JavaScript files
+html_css_files = [
+    "css/bibliography.css",
+]
+
+html_js_files = [
+    "js/bib_metadata.js",
+    "js/bibliography.js",
+]
 
 # -- Math configuration ------------------------------------------------------
 

@@ -39,6 +39,6 @@ Each of these domains are difficult in their own right, but it is on the bridges
    
 ----
 
-:doc:`← Robotics and Complexity <robotics_and_complexity>` | :doc:`Theory to Software: Control Algorithms as Dynamical Systems → <control_algorithms_as_dynamical_systems>`
+:doc:`← Robotics and Complexity <robotics_and_complexity>` | :doc:`Theory to Software → <control_algorithms_as_dynamical_systems>`
 
 ----

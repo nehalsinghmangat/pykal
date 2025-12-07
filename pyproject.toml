@@ -55,6 +55,8 @@ docs = [
   "myst-parser>=1.0",
   "myst_nb",
   "sphinx-toolbox>=3.5",
+  "sphinx-autodoc-typehints>=1.24.0",
+  "sphinxcontrib-bibtex>=2.5.0",
   "graphviz",
 ]
 

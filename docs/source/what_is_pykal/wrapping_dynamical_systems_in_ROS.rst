@@ -1,6 +1,6 @@
-===============================================================
-Simulation to Hardware: Wrapping Dynamical Systems in ROS Nodes
-===============================================================
+======================
+Simulation to Hardware
+======================
 same architecture, but something else
 PID + setpoint (start, then stop, change, and start again) + observer (kf) + turtlesim example
-:doc:`← Software to Simulation: Evaluating and Composing Dynamical Systems <composing_dynamical_systems>` | :doc:`What is pykal? → <../index>`
+:doc:`← Software to Simulation <composing_dynamical_systems>` | :doc:`What is pykal? → <../index>`
