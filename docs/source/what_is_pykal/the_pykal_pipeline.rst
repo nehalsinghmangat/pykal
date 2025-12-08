@@ -2,7 +2,7 @@
  Overview: The pykal pipeline
 ==============================
 
-Controlling a robot occurs in four steps, and ``pykal`` strives to make every step forward and every step back as painless as possible:
+Building a robot occurs in four steps, and ``pykal`` strives to make every step forward and every step back as painless as possible:
 
 .. graphviz::
    :align: center
@@ -27,7 +27,7 @@ Controlling a robot occurs in four steps, and ``pykal`` strives to make every st
 
    <div style="margin-top: 1.5em;"></div>
 
-**Theory**. Before we can control anything more complicated than a paperclip, we need to recast our robot as a control system.
+**Theory**. Before we can control anything more complicated than a paperclip, we need to cast our robot as a control system.
 
 **Software**. Once we have a control system, we must model it effectively in software. This enables us to run simulations and fix potential shortcomings of our model.
 

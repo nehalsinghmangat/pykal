@@ -33,7 +33,9 @@ The framework enables users to:
 3. **Utilities** (`src/pykal/utilities/`)
    - `estimators/kf.py`: Kalman filter implementation as DynamicalSystem-compatible functions
    - `ros2py_py2ros.py`: Bidirectional converters between ROS messages and NumPy arrays
+   - `gazebo.py`: Gazebo simulation launcher for Jupyter notebooks (start_gazebo/stop_gazebo)
    - Converter registries (`ROS2PY_DEFAULT`, `PY2ROS_DEFAULT`) for automatic message handling
+   - **ROS2 Optional**: `ros2py_py2ros` uses lazy imports - only fails if actually used without ROS2 installed
 
 ### Key Design Patterns
 
@@ -76,7 +78,8 @@ The project uses doctests extensively. All `.py` files are tested for embedded d
 
 ### Documentation
 ```bash
-# Build Sphinx documentation
+# Build Sphinx documentation (requires venv activation)
+source .venv/bin/activate
 cd docs
 make html
 
@@ -85,9 +88,23 @@ make html
 
 # Clean documentation build
 make clean
+
+# Regenerate bibliography metadata after updating references.bib
+python3 docs/generate_bib_metadata.py
 ```
 
 Documentation is hosted on ReadTheDocs at https://pykal.readthedocs.io
+
+**Bibliography System**: The Algorithm Library shows clickable colored circles linking to implementation notebooks:
+- Blue circle: `impl_pykal` field in `references.bib`
+- Green circle: `impl_turtlebot` field
+- Yellow circle: `impl_crazyflie` field
+
+Workflow to add new implementation:
+1. Create notebook in `docs/source/notebooks/`
+2. Update `docs/source/references.bib` with path (relative to `docs/source/`)
+3. Run `python3 docs/generate_bib_metadata.py` to regenerate metadata
+4. Run `cd docs && make html` to rebuild documentation
 
 ### Code Quality
 ```bash
@@ -150,6 +167,16 @@ The Kalman filter (`utilities/estimators/kf.py`):
 - Each function receives its own parameter dictionary (`f_params`, `F_params`, etc.)
 - Uses ridge regularization and pseudo-inverse fallback for numerical stability
 
+### Working with Gazebo Simulations
+
+The Gazebo launcher (`utilities/gazebo.py`):
+- `start_gazebo(robot, world, headless, x_pose, y_pose, z_pose, yaw)` launches Gazebo simulation
+- Returns `GazeboProcess` object for lifecycle management
+- `stop_gazebo(gz)` cleanly shuts down simulation
+- Supports `robot='turtlebot3'` and `robot='crazyflie'`
+- Use `headless=True` for faster simulation without GUI
+- Designed for Jupyter notebook integration (see `docs/source/notebooks/`)
+
 ## Project Structure
 
 ```
@@ -158,15 +185,26 @@ src/pykal/
 ├── dynamical_system.py      # Core DynamicalSystem abstraction
 ├── ros_node.py              # ROS2 node wrapper
 └── utilities/
-    ├── __init__.py
+    ├── __init__.py          # Lazy imports for ROS2 dependencies
     ├── estimators/
     │   ├── __init__.py
     │   └── kf.py            # Kalman filter implementation
-    └── ros2py_py2ros.py     # Message conversion utilities
+    ├── gazebo.py            # Gazebo simulation launcher
+    └── ros2py_py2ros.py     # Message conversion utilities (requires ROS2)
 
-docs/                        # Sphinx documentation
+docs/
+├── source/
+│   ├── notebooks/           # Implementation notebooks (built to HTML)
+│   │   ├── standard_kf.ipynb
+│   │   ├── kf_turtlebot_demo.ipynb
+│   │   └── crazyflie_kf_demo.ipynb
+│   ├── references.bib       # Bibliography with impl_* fields
+│   └── _static/js/
+│       └── bib_metadata.js  # Auto-generated from references.bib
+├── generate_bib_metadata.py # Regenerates bib_metadata.js
+└── build/html/              # Generated documentation
+
 tests/                       # Test directory (currently empty)
-notebooks/                   # Jupyter notebooks for examples
 ```
 
 ## Python Version

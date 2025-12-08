@@ -43,9 +43,7 @@ What's Next?
 ============
 
 - **Browse the** :doc:`../algorithm_library` to find implementations you can use
-- **See examples** in :doc:`../robot_examples/index` for platform-specific demos
 - **Understand the concepts** in :doc:`../what_is_pykal/index`
-- **Deploy to robots** via :doc:`../simulation_to_hardware/index`
 
 Key Concepts
 ============

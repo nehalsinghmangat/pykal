@@ -90,25 +90,9 @@ Use the filters below to search by category, algorithm type, and implementation 
 .. toctree::
    :hidden:
    :maxdepth: 2
-   :caption: Quick Start
+   :caption: Documentation
 
    getting_started/index
    algorithm_library
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-   :caption: The pykal Pipeline
-
    what_is_pykal/index
-   theory_to_software/index
-   software_to_simulation/index
-   simulation_to_hardware/index
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-   :caption: Examples & Reference
-
-   robot_examples/index
    license
