@@ -40,6 +40,12 @@ myst_enable_extensions = [
 ]
 myst_url_schemes = ("http", "https", "mailto")
 
+# Notebook execution configuration
+# Set to "off" to prevent executing notebooks during build
+# Set to "cache" to execute only when cached results don't exist
+# Set to "auto" to always execute notebooks
+nb_execution_mode = "off"
+
 
 # Autodoc default behavior for documenting modules
 autodoc_default_options = {

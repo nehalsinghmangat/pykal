@@ -40,15 +40,64 @@ class GazeboProcess:
         return self._is_running
 
     def terminate(self) -> None:
-        """Gracefully terminate the Gazebo process."""
-        if self.is_running():
-            self.process.terminate()
+        """Gracefully terminate the Gazebo process and all children."""
+        if not self.is_running():
+            return
+
+        # Get the process group ID
+        try:
+            pgid = os.getpgid(self.process.pid)
+        except (ProcessLookupError, AttributeError):
+            pgid = None
+
+        # Try graceful termination of the entire process group
+        if pgid is not None and os.name != 'nt':
             try:
-                self.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
+                os.killpg(pgid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass  # Process group already gone
+        else:
+            # Fallback for Windows or if pgid not available
+            self.process.terminate()
+
+        # Wait for processes to terminate
+        try:
+            self.process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            # Force kill the process group
+            if pgid is not None and os.name != 'nt':
+                try:
+                    os.killpg(pgid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+            else:
                 self.process.kill()
-                self.process.wait()
-            self._is_running = False
+
+            try:
+                self.process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                pass
+
+        # Final cleanup: kill any remaining gazebo/gz processes
+        # This catches any orphaned processes that escaped the process group
+        try:
+            subprocess.run(['pkill', '-9', '-f', 'gz sim'],
+                          stderr=subprocess.DEVNULL, timeout=2)
+            subprocess.run(['pkill', '-9', '-f', 'gzserver'],
+                          stderr=subprocess.DEVNULL, timeout=2)
+            subprocess.run(['pkill', '-9', '-f', 'gzclient'],
+                          stderr=subprocess.DEVNULL, timeout=2)
+            subprocess.run(['pkill', '-9', '-f', 'ros_gz_bridge'],
+                          stderr=subprocess.DEVNULL, timeout=2)
+            subprocess.run(['pkill', '-9', '-f', 'ros_gz_sim'],
+                          stderr=subprocess.DEVNULL, timeout=2)
+            subprocess.run(['pkill', '-9', '-f', 'robot_state_publisher'],
+                          stderr=subprocess.DEVNULL, timeout=2)
+            time.sleep(0.5)  # Give processes time to die
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass  # pkill not available or timed out
+
+        self._is_running = False
 
     def __repr__(self) -> str:
         status = "running" if self.is_running() else "stopped"
@@ -67,7 +116,8 @@ def start_gazebo(
     launch_file: Optional[str] = None,
     package: Optional[str] = None,
     extra_args: Optional[Dict[str, Any]] = None,
-    verbose: bool = True
+    verbose: bool = True,
+    model: str = 'burger'
 ) -> GazeboProcess:
     """
     Launch Gazebo simulation with a robot.
@@ -105,6 +155,9 @@ def start_gazebo(
         Additional launch arguments as key-value pairs
     verbose : bool, default=True
         Print status messages
+    model : str, default='burger'
+        TurtleBot3 model type (burger, waffle, or waffle_pi).
+        Only used when robot='turtlebot3'
 
     Returns
     -------
@@ -179,9 +232,11 @@ def start_gazebo(
         f'yaw:={yaw}'
     ])
 
-    # Add headless flag if requested
+    # Add GUI flag (explicit for both headless and GUI mode)
     if headless:
         cmd.append('gui:=false')
+    else:
+        cmd.append('gui:=true')  # Explicitly enable GUI
 
     # Add extra arguments
     if extra_args:
@@ -193,19 +248,63 @@ def start_gazebo(
         print(f"Mode: {'headless' if headless else 'GUI'}")
         print(f"Command: {' '.join(cmd)}")
 
+    # Set up environment variables
+    env = os.environ.copy()
+
+    # GPU/Rendering fixes for black window issue
+    if not headless:
+        # Try software rendering first (fixes most black window issues)
+        # Set to '1' for software rendering, '0' for hardware rendering
+        # If you have a working GPU, try setting LIBGL_ALWAYS_SOFTWARE=0
+        if 'LIBGL_ALWAYS_SOFTWARE' not in env:
+            env['LIBGL_ALWAYS_SOFTWARE'] = '0'  # Try hardware first
+
+        # Ensure DISPLAY is set
+        if 'DISPLAY' not in env:
+            env['DISPLAY'] = ':0'
+
+        if verbose:
+            print(f"Display: {env.get('DISPLAY', 'not set')}")
+            print(f"GPU Mode: {'Software' if env.get('LIBGL_ALWAYS_SOFTWARE') == '1' else 'Hardware'}")
+
+    if robot == 'turtlebot3':
+        env['TURTLEBOT3_MODEL'] = model
+        if verbose:
+            print(f"TurtleBot3 model: {model}")
+
+    # Ensure ROS2 is sourced if not already
+    if 'ROS_DISTRO' not in env:
+        # Try to find and source ROS2 setup
+        ros_setup_paths = [
+            '/opt/ros/jazzy/setup.bash',
+            '/opt/ros/humble/setup.bash',
+            '/opt/ros/iron/setup.bash'
+        ]
+        for setup_path in ros_setup_paths:
+            if os.path.exists(setup_path):
+                # We need to source the setup file - convert command to shell script
+                shell_cmd = f'source {setup_path} && {" ".join(cmd)}'
+                cmd = ['bash', '-c', shell_cmd]
+                break
+
     # Launch Gazebo
     try:
         process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE if not verbose else None,
             stderr=subprocess.PIPE if not verbose else None,
-            preexec_fn=os.setsid if os.name != 'nt' else None
+            preexec_fn=os.setsid if os.name != 'nt' else None,
+            env=env
         )
 
-        # Give Gazebo time to start
+        # Give Gazebo time to start and render
         if verbose:
             print("Waiting for Gazebo to initialize...")
-        time.sleep(5 if not headless else 3)
+            if not headless:
+                print("  (Scene rendering may take 10-15 seconds...)")
+
+        # Wait longer for GUI mode to allow rendering
+        time.sleep(10 if not headless else 3)
 
         # Check if process started successfully
         if process.poll() is not None:
@@ -215,6 +314,19 @@ def start_gazebo(
 
         if verbose:
             print("✓ Gazebo launched successfully")
+            if not headless:
+                print("\n" + "="*60)
+                print("GAZEBO WINDOW TROUBLESHOOTING")
+                print("="*60)
+                print("If you see a BLACK WINDOW:")
+                print("  1. Wait 10-20 seconds for scene to load")
+                print("  2. Try moving/rotating view (middle-click drag)")
+                print("  3. If still black, try software rendering:")
+                print("     export LIBGL_ALWAYS_SOFTWARE=1")
+                print("     (run this before starting Python/Jupyter)")
+                print("  4. Check GPU drivers are installed")
+                print("  5. Verify: glxinfo | grep 'OpenGL renderer'")
+                print("="*60 + "\n")
 
         return GazeboProcess(process, robot, world, headless)
 

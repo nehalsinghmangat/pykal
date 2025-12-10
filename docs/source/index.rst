@@ -76,7 +76,7 @@ Use the filters below to search by category, algorithm type, and implementation 
    <div class="legend-box">
      <strong>Legend:</strong> Click on a colored circle to view the implementation notebook.
      <div class="legend-items">
-       <span class="legend-item"><span class="impl-circle impl-pykal"></span> pykal core</span>
+       <span class="legend-item"><span class="impl-circle impl-pykal"></span> pykal </span>
        <span class="legend-item"><span class="impl-circle impl-turtlebot"></span> TurtleBot</span>
        <span class="legend-item"><span class="impl-circle impl-crazyflie"></span> Crazyflie</span>
      </div>
