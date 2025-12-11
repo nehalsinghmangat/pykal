@@ -2,20 +2,21 @@ import numpy as np
 from numpy.typing import NDArray
 from typing import Callable, Dict, Tuple
 
+
 class KF:
     @staticmethod
-    def f(
-        *,            
-        xhat_P: Tuple[NDArray, NDArray],  
+    def standard_f(
+        *,
+        xhat_P: Tuple[NDArray, NDArray],
         yk: NDArray,
         f: Callable,
         f_params: Dict,
         h: Callable,
-        h_params: Dict,                        
+        h_params: Dict,
         Fk: NDArray,
         Qk: NDArray,
         Hk: NDArray,
-        Rk: NDArray
+        Rk: NDArray,
     ) -> Tuple[NDArray, NDArray]:
         """
         Perform one full **predict–update** step of the discrete-time Kalman Filter.
@@ -84,7 +85,7 @@ class KF:
         **Update step**
         ---------------
         Innovation:
-            ``innovation = yk - y_pred``  
+            ``innovation = yk - y_pred``
             where ``y_pred = h(**h_params)``
 
         Innovation covariance:
@@ -133,7 +134,6 @@ class KF:
         return (x_upd, P_upd)
 
     @staticmethod
-    def h(xhat_P: Tuple[NDArray, NDArray]) -> NDArray:
+    def standard_h(xhat_P: Tuple[NDArray, NDArray]) -> NDArray:
         # extracts current state estimate
         return xhat_P[0]
-

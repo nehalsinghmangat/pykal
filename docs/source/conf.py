@@ -6,8 +6,7 @@ import sys
 # -- Path setup --------------------------------------------------------------
 
 # Add source directories to sys.path so autodoc can find modules
-sys.path.insert(0, os.path.abspath("../../pykal"))
-sys.path.insert(0, os.path.abspath("../../pykal_ros"))
+sys.path.insert(0, os.path.abspath("../../src"))
 
 # -- Project information -----------------------------------------------------
 
@@ -21,6 +20,7 @@ release = "0.1.0"  # Version of the project
 extensions = [
     "myst_nb",
     "sphinx.ext.autodoc",  # Automatically document docstrings
+    "sphinx.ext.autosummary",  # Generate summary tables and toctrees for API docs
     "sphinx.ext.napoleon",  # Support for Google/NumPy-style docstrings
     "sphinx.ext.viewcode",  # Add [source] links to Python code
     "sphinx.ext.mathjax",  # Math rendering in HTML (LaTeX-style)
@@ -57,6 +57,10 @@ autodoc_default_options = {
 
 autodoc_typehints = "description"  # Move type hints from signature into docstring
 
+# Autosummary configuration
+autosummary_generate = True  # Automatically generate stub files for autosummary
+autosummary_imported_members = False  # Don't include imported members
+
 # Napoleon (Google/NumPy docstring style) configuration
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
@@ -82,6 +86,15 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]  # Files to ignore
 
 html_theme = "sphinx_rtd_theme"  # Theme used (ReadTheDocs theme)
 html_static_path = ["_static"]  # Static assets like CSS/JS/images
+
+# ReadTheDocs theme options
+html_theme_options = {
+    "navigation_depth": 4,  # Show up to 4 levels deep in sidebar
+    "collapse_navigation": False,  # Keep navigation expanded
+    "sticky_navigation": True,  # Keep sidebar visible while scrolling
+    "includehidden": True,  # Show hidden toctrees in sidebar
+    "titles_only": False,  # Show full navigation tree, not just titles
+}
 
 # Custom CSS and JavaScript files
 html_css_files = [

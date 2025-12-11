@@ -96,3 +96,16 @@ Use the filters below to search by category, algorithm type, and implementation 
    algorithm_library
    what_is_pykal/index
    license
+
+.. toctree::
+   :hidden:
+   :maxdepth: 2
+   :caption: API Reference
+
+   api/index
+   api/dynamical_system
+   api/data_change
+   api/state_estimators
+   api/controllers
+   api/gazebo
+   api/ros

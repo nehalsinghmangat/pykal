@@ -1,6 +1,6 @@
-================
- What is pykal?
-================
+==========
+Quickstart
+==========
 ..  toctree::
     :caption: Contents
     :maxdepth: 3

@@ -12,7 +12,7 @@ from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 from rclpy.callback_groups import ReentrantCallbackGroup
 from numpy.typing import NDArray
 
-from pykal.utilities.ros2py_py2ros import ROS2PY_DEFAULT, PY2ROS_DEFAULT
+from pykal.ros.ros2py_py2ros import ROS2PY_DEFAULT, PY2ROS_DEFAULT
 
 SubTuple = Tuple[str, type, str]  # (topic, msg_type, arg_name)
 PubTuple = Tuple[str, type, str]  # (return_key, msg_type, topic)

@@ -9,7 +9,7 @@ import time
 # Add the pykal module to the path
 sys.path.insert(0, '/home/nehal/.emacs.d/Projects/Software/pykal/src')
 
-from pykal.utilities.gazebo import start_gazebo, stop_gazebo
+from pykal.gazebo import start_gazebo, stop_gazebo
 
 def test_gazebo_launch():
     """Test that Gazebo can launch successfully."""

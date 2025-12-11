@@ -8,7 +8,7 @@ from .dynamical_system import DynamicalSystem
 def __getattr__(name):
     if name == "ROSNode":
         try:
-            from .ros_node import ROSNode
+            from .ros.ros_node import ROSNode
             return ROSNode
         except ImportError as e:
             raise ImportError(
@@ -17,11 +17,19 @@ def __getattr__(name):
             ) from e
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
-# Expose key utilities as namespaces, not direct symbols
-from . import utilities
+# Expose key modules as namespaces, not direct symbols
+from . import state_estimators
+from . import controllers
+from . import ros
+from . import gazebo
+from . import data_change
 
 __all__ = [
     "DynamicalSystem",
     "ROSNode",
-    "utilities",
+    "state_estimators",
+    "controllers",
+    "ros",
+    "gazebo",
+    "data_change",
 ]
