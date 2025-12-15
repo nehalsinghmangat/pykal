@@ -1,61 +1,21 @@
-===============
+================
 Getting Started
-===============
+================
 
-Welcome to pykal! This section will get you up and running quickly.
+``pykal`` is a Python package that serves as a bridge between theoretical control/estimation algorithms and their implementation onto hardware. It does this by treating the discrete-time dynamical system as a compositional primitive with which we may implement any algorithm we like. 
 
-Installation
-============
+This tutorial walks through the entirety of the ``pykal`` API using simple example systems, where we begin with block diagrams and end with robust ROS node architectures that may be deployed as needed. 
 
-.. code-block:: bash
+Although I often find it useful, in learning a new tool, to first understand its history (e.g. in what context was it created, what problems was it built to solve), the reader may skip the Background section and  begin with the "Quickstart: pykal Workflow" section without any loss in utility. Similarly, the reader can skip the "Installation" section if they already installed pykal, ros 2, and gazebo on their computer. 
 
-   pip install pykal
+..  toctree::
+    :caption: Contents
+    :maxdepth: 2
 
-Quick Start
-===========
-
-Here's a minimal example to see pykal in action:
-
-.. code-block:: python
-
-   from pykal import DynamicalSystem
-   import numpy as np
-
-   # Define a simple system
-   def f(x, u):
-       """Simple integrator dynamics"""
-       return x + u * 0.1
-
-   # Create dynamical system
-   system = DynamicalSystem(
-       f=f,
-       state_name='x',
-       param_dict={'x': np.array([0.0])},
-       f_params_names=['x', 'u']
-   )
-
-   # Step the system
-   u = np.array([1.0])
-   observation = system.step({'u': u})
-   print(f"New state: {observation}")
-
-What's Next?
-============
-
-- **Browse the** :doc:`../algorithm_library` to find implementations you can use
-- **Understand the concepts** in :doc:`../what_is_pykal/index`
-
-Key Concepts
-============
-
-pykal bridges four stages:
-
-1. **Theory** - Mathematical models of control systems
-2. **Software** - Python implementations using DynamicalSystem
-3. **Simulation** - Testing in Gazebo via ROS2 nodes
-4. **Hardware** - Deployment to real robots (TurtleBot, Crazyflie)
-
-.. seealso::
-
-   - :doc:`../algorithm_library` - Browse implemented algorithms
-   - :doc:`../what_is_pykal/the_pykal_pipeline` - Detailed pipeline explanation
+    background
+    installation
+    ../notebooks/pykal_workflow
+    ../notebooks/curse_of_hardware
+    ../notebooks/simulating_the_curse
+    ../notebooks/ros_deployment
+    ../notebooks/ros_deployment_and_gazebo
