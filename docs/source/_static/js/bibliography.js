@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Get all filter elements
     const categoryFilter = document.getElementById('category-filter');
-    const algorithmFilter = document.getElementById('algorithm-filter');
     const implCheckboxes = document.querySelectorAll('input.impl-checkbox');
     const resetButton = document.getElementById('reset-filters');
     const noResultsMessage = document.getElementById('no-results-message');
@@ -55,7 +54,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Store metadata in dataset
                 citation.dataset.keywords = metadata.keywords || '';
-                citation.dataset.category = metadata.category || '';
                 citation.dataset.implPykal = metadata.impl_pykal || '';
                 citation.dataset.implTurtlebot = metadata.impl_turtlebot || '';
                 citation.dataset.implCrazyflie = metadata.impl_crazyflie || '';
@@ -163,7 +161,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const categoryValue = categoryFilter.value;
-        const algorithmValue = algorithmFilter.value;
 
         // Get selected implementation filters (can be multiple)
         const implValues = [];
@@ -173,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        console.log('Filter values:', { categoryValue, algorithmValue, implValues });
+        console.log('Filter values:', { categoryValue, implValues });
 
         let visibleCount = 0;
 
@@ -186,15 +183,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!keywords.includes(categoryValue)) {
                     visible = false;
                     console.log(`Citation ${index} hidden by category filter`);
-                }
-            }
-
-            // Check algorithm filter
-            if (algorithmValue !== 'all') {
-                const category = citation.dataset.category || '';
-                if (!category.includes(algorithmValue)) {
-                    visible = false;
-                    console.log(`Citation ${index} hidden by algorithm filter`);
                 }
             }
 
@@ -248,7 +236,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function resetFilters() {
         console.log('Resetting filters');
         if (categoryFilter) categoryFilter.value = 'all';
-        if (algorithmFilter) algorithmFilter.value = 'all';
 
         // Uncheck all implementation checkboxes
         implCheckboxes.forEach(checkbox => {
@@ -262,10 +249,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (categoryFilter) {
         categoryFilter.addEventListener('change', applyFilters);
         console.log('Category filter listener attached');
-    }
-    if (algorithmFilter) {
-        algorithmFilter.addEventListener('change', applyFilters);
-        console.log('Algorithm filter listener attached');
     }
 
     implCheckboxes.forEach(checkbox => {

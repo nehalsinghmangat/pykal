@@ -2,17 +2,21 @@ pykal: From Theory to Python to ROS
 ===================================
 **pykal** is a Python development framework that bridges the chasm between theoretical control systems and their implementation in hardware. Designed for hobbyists, students, and academics alike, this framework won't cure cancer, but it can do the next best thing: make controlling robots easier.
 
-To learn more about the **pykal** package and how to use it, click here: `Getting Started <./getting_started/index>`.
+To learn more about the **pykal** package and how to use it, see the :doc:`getting_started/index` guide in the sidebar.
 
-To access the GitHub repo and watch for the official release, click here: `pykal repo <https://github.com/nehalsinghmangat/pykal?tab=readme-ov-file>`_
+To access community-made tutorial notebooks, example systems, and other fun robot things, see the :doc:`community/index` page in the sidebar. 
+
+To access the GitHub repo, `click here <https://github.com/nehalsinghmangat/pykal?tab=readme-ov-file>`_.
 
 =================
 Algorithm Library
 =================
 
-Browse pykal's collection of implemented control and estimation algorithms.
+Browse **pykal**'s collection of implemented control and estimation algorithms!
 Each algorithm links to interactive Jupyter notebooks with working code you can download and run.
-Use the filters below to search by category, algorithm type, and implementation platform.
+Use the filters below to search by category and implementation platform.
+
+**Want to contribute your algorithm?** See the :doc:`community/contribution_guidelines` in the community page to add your paper and implementation to the library!
 
 .. raw:: html
 
@@ -21,29 +25,8 @@ Use the filters below to search by category, algorithm type, and implementation 
        <label for="category-filter">Category:</label>
        <select id="category-filter" class="filter-select">
          <option value="all">All</option>
-         <option value="state-estimation">State Estimation</option>
+         <option value="estimation">Estimation</option>
          <option value="control">Control</option>
-         <option value="planning">Planning</option>
-         <option value="filtering">Filtering</option>
-       </select>
-     </div>
-
-     <div class="filter-group">
-       <label for="algorithm-filter">Algorithm:</label>
-       <select id="algorithm-filter" class="filter-select">
-         <option value="all">All</option>
-         <option value="kalman-filter">Kalman Filter</option>
-         <option value="square-root-kf">Square Root KF</option>
-         <option value="partial-update-kf">Partial Update KF</option>
-         <option value="ukf">Unscented Kalman Filter</option>
-         <option value="particle-filter">Particle Filter</option>
-         <option value="observer">Luenberger Observer</option>
-         <option value="mhe">Moving Horizon Estimation</option>
-         <option value="pid">PID Controller</option>
-         <option value="lqr">LQR</option>
-         <option value="mpc">MPC</option>
-         <option value="h-infinity">H-infinity Control</option>
-         <option value="sliding-mode">Sliding Mode Control</option>
        </select>
      </div>
 
@@ -95,6 +78,7 @@ Use the filters below to search by category, algorithm type, and implementation 
    :caption: Documentation
 
    getting_started/index
+   community/index
    license
 
 .. toctree::

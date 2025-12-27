@@ -1,0 +1,76 @@
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc, shapes.geometric}
+
+\begin{document}
+\begin{tikzpicture}[
+  block/.style = {draw, thick, minimum height=3em, minimum width=6em, align=center},
+  arrow/.style = {thick, -{Latex[width=2mm]}},
+  node distance=2.5cm and 2.5cm
+]
+
+  % Signal Generator
+  \node[block] (siggen) {
+    \begin{tabular}{c}
+       Setpoint Speed \\
+      $\begin{aligned}
+      s_{k+1} &= f_s(s_k,\,\mu_s) \\
+      r &= h_s(s_k,\,\mu_{s})
+       \end{aligned}$
+    \end{tabular}
+  };
+
+  % Controller (now directly takes r and xhat)
+  \node[block, right=3.0cm of siggen] (controller) {
+    \begin{tabular}{c}
+            PID\\
+      $\begin{aligned}
+      c_{k+1} &= f_c(c_k,\,r,\,\hat{x},\,\mu_c) \\
+      u &= h_c(c_k,\,r,\,\hat{x},\,\mu_{c})
+       \end{aligned}$      
+    \end{tabular}
+  };
+
+  % Plant
+  \node[block, right=3.0cm of controller] (system) {
+    \begin{tabular}{c}
+      Car\\      
+      $\begin{aligned}
+      p_{k+1} &= f_p(p_k,\,u,\,\mu_p) \\
+      x &= h_p(p_k,\,u,\,\mu_{p})
+       \end{aligned}$                  
+    \end{tabular}
+  };
+
+  % Observer
+  \node[block, below=2cm of system] (observer) {
+    \begin{tabular}{c}
+      KF\\      
+    $\begin{aligned}
+      o_{k+1} &= f_o(o_k,\,u,\,x,\,\mu_o) \\
+      \hat{x} &= h_o(o_k,\,u,\,x,\,\mu_{o})
+       \end{aligned}$            
+    \end{tabular}
+  };
+
+  % r -> controller
+  \draw[arrow] (siggen.east) -- node[above] {$r$} (controller.west);
+
+  % controller -> plant
+  \draw[arrow] (controller.east) -- node[above] {$u$} (system.west);
+
+  % u branch to observer
+  \coordinate (usplit) at ($(controller.east)!0.5!(system.west)$);
+  \coordinate[above=1em of observer.west] (observer_uin);
+  \draw[arrow] (usplit) |- (observer_uin) node[pos=0.25, right];
+
+  % y_p -> observer
+  \draw[arrow] (system.south) -- node[right] {$x$} (observer.north);
+
+  % observer -> controller (state estimate)
+  \coordinate (controller_yoin) at ($(controller.south)!0.5!(controller.south -| observer.north)$);
+  \draw[arrow] (observer.west) -| node[pos=0.2, below] {$\hat{x}$} (controller.south);
+
+\end{tikzpicture}
+\end{document}

@@ -1,13 +1,12 @@
 % BibTeX file for pykal references
 %
 % Custom fields used for filtering:
-%   - keywords: algorithm type (e.g., "state-estimation", "control", "planning")
-%   - pykal_category: specific category (e.g., "kalman-filter", "pid", "mpc")
+%   - keywords: algorithm category - must be either "estimation" or "control"
 %   - impl_pykal: path to notebook if implemented in pykal core (e.g., "notebooks/kalman_filter_demo.ipynb")
 %   - impl_turtlebot: path to notebook if implemented for turtlebot (e.g., "notebooks/kf_turtlebot.ipynb")
 %   - impl_crazyflie: path to notebook if implemented for crazyflie (e.g., "notebooks/kf_crazyflie.ipynb")
 %
-% See BIBLIOGRAPHY_QUICK_REFERENCE.md for a template and examples
+% See CONTRIBUTING.md for full template and examples
 
 
 @article{kalman1960new,
@@ -20,10 +19,173 @@
   year         = {1960},
   publisher    = {American Society of Mechanical Engineers},
   url          = {https://doi.org/10.1115/1.3662552},
-  keywords     = {state-estimation},
-  pykal_category = {kalman-filter},
-  impl_pykal   = {notebooks/standard_kf.ipynb},
-  impl_turtlebot = {notebooks/kf_turtlebot_demo.ipynb},
-  impl_crazyflie = {notebooks/crazyflie_kf_demo.ipynb},
+  keywords     = {estimation},
+  impl_pykal   = {notebooks/algorithm_library/kf_pykal.ipynb},
+  impl_turtlebot = {notebooks/algorithm_library/kf_turtlebot.ipynb},
+  impl_crazyflie = {notebooks/algorithm_library/kf_crazyflie.ipynb},
   note         = {Classic Kalman filter paper. Implementations available in pykal core and TurtleBot}
+}
+
+@article{ziegler1942optimum,
+  title        = {Optimum Settings for Automatic Controllers},
+  author       = {Ziegler, John G. and Nichols, Nathaniel B.},
+  journal      = {Transactions of the ASME},
+  volume       = {64},
+  pages        = {759--768},
+  year         = {1942},
+  publisher    = {American Society of Mechanical Engineers},
+  url          = {https://doi.org/10.1115/1.4019264},
+  keywords     = {control},
+  impl_pykal   = {notebooks/algorithm_library/pid_pykal.ipynb},
+  impl_turtlebot = {notebooks/algorithm_library/pid_turtlebot.ipynb},
+  impl_crazyflie = {notebooks/algorithm_library/pid_crazyflie.ipynb},
+  note         = {Classic PID controller tuning paper introducing the Ziegler-Nichols method}
+}
+
+@article{julier2004unscented,
+  title        = {Unscented Filtering and Nonlinear Estimation},
+  author       = {Julier, Simon J. and Uhlmann, Jeffrey K.},
+  journal      = {Proceedings of the IEEE},
+  volume       = {92},
+  number       = {3},
+  pages        = {401--422},
+  year         = {2004},
+  publisher    = {IEEE},
+  url          = {https://doi.org/10.1109/JPROC.2003.823141},
+  keywords     = {estimation},
+  impl_pykal   = {notebooks/algorithm_library/ukf_pykal.ipynb},
+  impl_turtlebot = {notebooks/algorithm_library/ukf_turtlebot.ipynb},
+  impl_crazyflie = {notebooks/algorithm_library/ukf_crazyflie.ipynb},
+  note         = {Comprehensive review of the Unscented Kalman Filter for nonlinear state estimation}
+}
+
+@article{kalman1960contributions,
+  title        = {Contributions to the theory of optimal control},
+  author       = {Kalman, Rudolph Emil},
+  journal      = {Boletin de la Sociedad Matematica Mexicana},
+  volume       = {5},
+  number       = {2},
+  pages        = {102--119},
+  year         = {1960},
+  keywords     = {control},
+  impl_pykal   = {notebooks/algorithm_library/lqr_pykal.ipynb},
+  impl_turtlebot = {notebooks/algorithm_library/lqr_turtlebot.ipynb},
+  impl_crazyflie = {notebooks/algorithm_library/lqr_crazyflie.ipynb},
+  note         = {Original work on linear quadratic regulators and optimal control theory}
+}
+
+@article{gordon1993novel,
+  title        = {Novel approach to nonlinear/non-Gaussian Bayesian state estimation},
+  author       = {Gordon, Neil J. and Salmond, David J. and Smith, Adrian F. M.},
+  journal      = {IEE Proceedings F (Radar and Signal Processing)},
+  volume       = {140},
+  number       = {2},
+  pages        = {107--113},
+  year         = {1993},
+  publisher    = {IET},
+  keywords     = {estimation},
+  impl_pykal   = {notebooks/algorithm_library/pf_pykal.ipynb},
+  impl_turtlebot = {notebooks/algorithm_library/pf_turtlebot.ipynb},
+  impl_crazyflie = {notebooks/algorithm_library/pf_crazyflie.ipynb},
+  note         = {Seminal paper introducing the bootstrap filter (particle filter)}
+}
+
+@article{mayne2000constrained,
+  title        = {Constrained model predictive control: Stability and optimality},
+  author       = {Mayne, David Q. and Rawlings, James B. and Rao, Christopher V. and Scokaert, Pierre O. M.},
+  journal      = {Automatica},
+  volume       = {36},
+  number       = {6},
+  pages        = {789--814},
+  year         = {2000},
+  publisher    = {Elsevier},
+  keywords     = {control},
+  impl_pykal   = {notebooks/algorithm_library/mpc_pykal.ipynb},
+  impl_turtlebot = {notebooks/algorithm_library/mpc_turtlebot.ipynb},
+  impl_crazyflie = {notebooks/algorithm_library/mpc_crazyflie.ipynb},
+  note         = {Comprehensive treatment of MPC stability and constraint handling}
+}
+
+@article{cellini2025discovering,
+  title        = {Discovering and exploiting active sensing motifs for estimation},
+  author       = {Cellini, B. and Boyacioglu, B. and Lopez, A. and van Breugel, F.},
+  journal      = {arXiv preprint arXiv:2511.08766},
+  year         = {2025},
+  url          = {https://arxiv.org/abs/2511.08766},
+  keywords     = {estimation},
+  impl_pykal   = {notebooks/algorithm_library/ai_ukf_pykal.ipynb},
+  impl_crazyflie = {notebooks/algorithm_library/ai_ukf_crazyflie.ipynb},
+  note         = {Introduces Augmented Information UKF for hybrid physics-data-driven estimation with observability-aware variance scheduling}
+}
+
+@book{rawlings2017model,
+  title        = {Model Predictive Control: Theory, Computation, and Design},
+  author       = {Rawlings, James Blake and Mayne, David Q. and Diehl, Moritz},
+  edition      = {2nd},
+  year         = {2017},
+  publisher    = {Nob Hill Publishing},
+  isbn         = {978-0975937730},
+  keywords     = {control},
+  note         = {Comprehensive textbook on model predictive control theory and implementation}
+}
+
+@inproceedings{mellinger2011minimum,
+  title        = {Minimum snap trajectory generation and control for quadrotors},
+  author       = {Mellinger, Daniel and Kumar, Vijay},
+  booktitle    = {2011 IEEE International Conference on Robotics and Automation},
+  pages        = {2520--2525},
+  year         = {2011},
+  organization = {IEEE},
+  url          = {https://doi.org/10.1109/ICRA.2011.5980409},
+  keywords     = {control},
+  note         = {Influential work on quadrotor trajectory generation and tracking control}
+}
+
+@book{anderson2007optimal,
+  title        = {Optimal Control: Linear Quadratic Methods},
+  author       = {Anderson, Brian D. O. and Moore, John B.},
+  year         = {2007},
+  publisher    = {Dover Publications},
+  isbn         = {978-0486457666},
+  keywords     = {control},
+  note         = {Classic textbook on linear quadratic regulators and optimal control theory}
+}
+
+@book{siegwart2011introduction,
+  title        = {Introduction to Autonomous Mobile Robots},
+  author       = {Siegwart, Roland and Nourbakhsh, Illah Reza and Scaramuzza, Davide},
+  edition      = {2nd},
+  year         = {2011},
+  publisher    = {MIT Press},
+  isbn         = {978-0262015356},
+  keywords     = {control},
+  note         = {Comprehensive textbook on mobile robot kinematics, control, and localization}
+}
+
+@phdthesis{bouabdallah2007design,
+  title        = {Design and Control of Quadrotors with Application to Autonomous Flying},
+  author       = {Bouabdallah, Samir},
+  year         = {2007},
+  school       = {Ecole Polytechnique Federale de Lausanne},
+  url          = {https://doi.org/10.5075/epfl-thesis-3727},
+  keywords     = {control},
+  note         = {Influential thesis on quadrotor modeling, control design, and experimental validation}
+}
+
+@misc{pykal:turtlebot_estimation,
+  title        = {TurtleBot State Estimation with Noisy Odometry},
+  author       = {{pykal Contributors}},
+  year         = {2025},
+  impl_pykal   = {notebooks/tutorial/theory_to_python/turtlebot_state_estimation.ipynb},
+  keywords     = {estimation},
+  note         = {Pedagogical notebook demonstrating ground robot state estimation with Extended Kalman Filter}
+}
+
+@misc{pykal:crazyflie_fusion,
+  title        = {Crazyflie Multi-Sensor Fusion},
+  author       = {{pykal Contributors}},
+  year         = {2025},
+  impl_pykal   = {notebooks/tutorial/theory_to_python/crazyflie_sensor_fusion.ipynb},
+  keywords     = {estimation},
+  note         = {Pedagogical notebook demonstrating multi-sensor Kalman filtering with motion capture, barometer, and IMU}
 }

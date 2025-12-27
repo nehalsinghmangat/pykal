@@ -220,7 +220,7 @@ def start_gazebo(
     if robot == 'turtlebot3':
         cmd.extend(['turtlebot3_gazebo', f'{world}.launch.py'])
     elif robot == 'crazyflie':
-        cmd.extend(['crazyflie_gazebo', f'{world}.launch.py'])
+        cmd.extend(['ros_gz_crazyflie_bringup', 'crazyflie_simulation.launch.py'])
     else:  # custom
         cmd.extend([package, launch_file])
 

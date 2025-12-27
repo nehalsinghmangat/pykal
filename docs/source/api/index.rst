@@ -12,15 +12,9 @@ This section provides detailed API documentation for all pykal modules.
 
 .. toctree::
    :maxdepth: 2
-   :caption: State Estimators
+   :caption: Algorithm Library
 
-   state_estimators
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Controllers
-
-   controllers
+   algorithm_library
 
 .. toctree::
    :maxdepth: 2

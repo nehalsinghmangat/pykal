@@ -17,9 +17,10 @@ def __getattr__(name):
             ) from e
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
-# Expose key modules as namespaces, not direct symbols
-from . import state_estimators
-from . import controllers
+# Primary API: algorithm_library
+from . import algorithm_library
+
+# Other modules
 from . import ros
 from . import gazebo
 from . import data_change
@@ -27,8 +28,7 @@ from . import data_change
 __all__ = [
     "DynamicalSystem",
     "ROSNode",
-    "state_estimators",
-    "controllers",
+    "algorithm_library",
     "ros",
     "gazebo",
     "data_change",

@@ -4,6 +4,7 @@ from typing import Any, Dict, List
 import rclpy
 from geometry_msgs.msg import (
     Vector3,
+    Vector3Stamped,
     Quaternion,
     Pose,
     PoseStamped,
@@ -105,6 +106,29 @@ def py2ros_vector3(arr: NDArray) -> Vector3:
     msg.x = float(x)
     msg.y = float(y)
     msg.z = float(z)
+    return msg
+
+
+# ---------------------------------------------------------------------------
+# geometry_msgs/Vector3Stamped  <->  np.ndarray(4,) [t, x, y, z]
+# ---------------------------------------------------------------------------
+
+def ros2py_vector3_stamped(msg: Vector3Stamped) -> NDArray:
+    """Convert Vector3Stamped to [t, x, y, z]."""
+    t = ros2py_time(msg.header.stamp)
+    vec = ros2py_vector3(msg.vector)
+    return np.concatenate(([t], vec))
+
+
+def py2ros_vector3_stamped(arr: NDArray, *, frame_id: str = "") -> Vector3Stamped:
+    """Convert [t, x, y, z] to Vector3Stamped."""
+    flat = np.asarray(arr, dtype=float).ravel()
+    if flat.size != 4:
+        raise ValueError(f"py2ros_vector3_stamped expected length 4, got {flat.size}")
+
+    msg = Vector3Stamped()
+    msg.header = py2ros_header(float(flat[0]), frame_id)
+    msg.vector = py2ros_vector3(flat[1:4])
     return msg
 
 
@@ -951,6 +975,7 @@ ROS2PY_DEFAULT = {
     Wrench: ros2py_wrench,
     Accel: ros2py_accel,
     AccelStamped: ros2py_accel_stamped,
+    Vector3Stamped: ros2py_vector3_stamped,
     Imu: ros2py_imu,
     Odometry: ros2py_odometry,
     Path: ros2py_path,
@@ -974,6 +999,7 @@ PY2ROS_DEFAULT = {
     Wrench: py2ros_wrench,
     Accel: py2ros_accel,
     AccelStamped: py2ros_accel_stamped,
+    Vector3Stamped: py2ros_vector3_stamped,
     Imu: py2ros_imu,
     Odometry: py2ros_odometry,
     Path: py2ros_path,

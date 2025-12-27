@@ -1,5 +1,4 @@
 # Configuration file for the Sphinx documentation builder.
-
 import os
 import sys
 
@@ -40,11 +39,20 @@ myst_enable_extensions = [
 ]
 myst_url_schemes = ("http", "https", "mailto")
 
+# Generate anchors for h1, h2, h3 headings (show ### in sidebar TOC)
+myst_heading_anchors = 3
+
+# Automatically add toctree entries for page sections (enables local TOC in sidebar)
+myst_update_mathjax = False
+
 # Notebook execution configuration
-# Set to "off" to prevent executing notebooks during build
-# Set to "cache" to execute only when cached results don't exist
-# Set to "auto" to always execute notebooks
-nb_execution_mode = "off"
+# "off" - never execute (use saved outputs only)
+# "auto" - execute only if no outputs exist in .ipynb
+# "cache" - execute and cache results, re-run only on code changes
+# "force" - always execute on every build
+#
+# Individual notebooks can override this with mystnb.execution_mode metadata
+nb_execution_mode = "off"  # Execute only notebooks without saved outputs
 
 
 # Autodoc default behavior for documenting modules
@@ -89,17 +97,23 @@ html_static_path = ["_static"]  # Static assets like CSS/JS/images
 
 # ReadTheDocs theme options
 html_theme_options = {
-    "navigation_depth": 4,  # Show up to 4 levels deep in sidebar
+    "navigation_depth": -1,  # Show ALL levels in sidebar (-1 = unlimited)
     "collapse_navigation": False,  # Keep navigation expanded
     "sticky_navigation": True,  # Keep sidebar visible while scrolling
     "includehidden": True,  # Show hidden toctrees in sidebar
     "titles_only": False,  # Show full navigation tree, not just titles
 }
 
+# Sphinx will generate local TOCs for each page showing internal sections
+html_use_index = True
+html_domain_indices = True
+
+# Set the depth for local page TOC (shows h1, h2, h3 when on that specific page)
+# This is separate from toctree maxdepth which controls global navigation
+toc_object_entries_show_parents = 'hide'
+
 # Custom CSS and JavaScript files
-html_css_files = [
-    "css/bibliography.css",
-]
+html_css_files = ["css/bibliography.css", "css/custom.css"]
 
 html_js_files = [
     "js/bib_metadata.js",
