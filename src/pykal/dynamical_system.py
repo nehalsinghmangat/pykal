@@ -1,21 +1,16 @@
 import inspect
 from typing import Any, Callable, Dict, Optional
 
+
 class DynamicalSystem:
     def __init__(
         self,
         *,
         f: Optional[Callable] = None,
-        h: Optional[Callable] = None,
-        state_name: Optional[str] = None,
+        h: Callable,
     ) -> None:
         self._f = f
-        self._h = h if h is not None else (lambda state_vector: state_vector)
-
-        if f is not None and state_name is None:
-            raise ValueError("state_name cannot be 'None' if f is not 'None'")
-
-        self._state_name = state_name
+        self._h = h
 
     @property
     def f(self) -> Optional[Callable]:
@@ -33,16 +28,8 @@ class DynamicalSystem:
     def h(self, h: Callable) -> None:
         self._h = h
 
-    @property
-    def state_name(self) -> Optional[str]:
-        return self._state_name
-
-    @state_name.setter
-    def state_name(self, state_name: Optional[str]) -> None:
-        self._state_name = state_name
-
+    @staticmethod
     def _smart_call(
-        self,
         func: Callable[..., Any],
         param_dict: Dict[str, Any],
     ) -> Any:
@@ -70,18 +57,8 @@ class DynamicalSystem:
         bound = sig.bind_partial(*pos_args, **call_kwargs)
         return func(*bound.args, **bound.kwargs)
 
-    def step(
-        self,
-        *,
-        param_dict: Dict[str, Any],
-        return_state: bool=False
-    ) -> Any:
+    def step(self, *, params: Dict[str, Any]) -> Any:
         if self.f is None:
-            return self._smart_call(self.h, param_dict)
+            return self._smart_call(self.h, params)
 
-        param_dict_copy = dict(param_dict) # copy param_dict so we dont risk mutation outside of this method
-        param_dict_copy[self.state_name] = self._smart_call(self.f, param_dict)
-        if return_state:
-            return self._smart_call(self.f, param_dict),self._smart_call(self.h, param_dict_copy)
-        else:
-            return self._smart_call(self.h, param_dict_copy)
+        return self._smart_call(self.f, params), self._smart_call(self.h, params)

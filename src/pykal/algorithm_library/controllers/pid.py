@@ -6,7 +6,7 @@ from typing import Tuple
 class PID:
     @staticmethod
     def f(
-        ck: Tuple[float, float, float], rk: float, xhat_k: float
+        ck: Tuple[float, float, float], rk: float, xhatk: float
     ) -> Tuple[float, float, float]:
         """
         Perform one state update step for a discrete-time PID controller.
@@ -22,7 +22,7 @@ class PID:
         rk : float
             The reference (setpoint) value at time k.
 
-        xhat_k : float
+        xhatk : float
             The current state estimate (measured or estimated output) at time k.
 
         Returns
@@ -39,7 +39,7 @@ class PID:
         the discrete-time formulation:
 
         **Error calculation:**
-            ``ek = rk - xhat_k``
+            ``ek = rk - xhatk``
 
         **Integral update:**
             ``Ik = Ik_prev + ek``
@@ -52,15 +52,13 @@ class PID:
             ``(current_error, integral, previous_error)``
         """
         ek_prev, Ik_prev, _ = ck
-        ek = rk - xhat_k
+        ek = rk - xhatk
         Ik = Ik_prev + ek
         return (ek, Ik, ek_prev)
 
     @staticmethod
     def h(
         ck: Tuple[float, float, float],
-        rk: float,
-        xhat_k: float,
         KP: float,
         KI: float,
         KD: float,
@@ -75,12 +73,6 @@ class PID:
                 - ``ek``      : current error at time k
                 - ``Ik``      : accumulated integral of error
                 - ``ek_prev`` : previous error for derivative calculation
-
-        rk : float
-            The reference (setpoint) value at time k (unused in output calculation).
-
-        xhat_k : float
-            The current state estimate at time k (unused in output calculation).
 
         KP : float
             Proportional gain coefficient.

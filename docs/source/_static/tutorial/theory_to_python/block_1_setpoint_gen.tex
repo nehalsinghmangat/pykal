@@ -13,16 +13,22 @@
   % Signal Generator
   \node[block] (siggen) {
     \begin{tabular}{c}
-            Setpoint Speed \\
+            Setpoint Generator \\
       $\begin{aligned}
-      s_{k+1} &= f_s(s_k,\,\mu_s) \\
-      r &= h_s(s_k,\,\mu_{s})
+      s_{k+1} &= f_s(s_k,\,b_k) \\
+      r_k &= h_s(s_k,\,b_k)
        \end{aligned}$
     \end{tabular}
   };
 
 
-  \draw[arrow] (siggen.east) -- ++(2.5,0) node[midway,above] {$r$};
+      % bk -> signal
+  \node[left=2.5cm of siggen] (button) {};
+  \draw[arrow] (button.east) -- node[above] {$b_k$} (siggen.west);
+  
+  \draw[arrow] (siggen.east) -- ++(2.5,0) node[midway,above] {$r_k$};
+
+
 
 
 \end{tikzpicture}

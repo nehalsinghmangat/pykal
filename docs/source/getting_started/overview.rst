@@ -1,26 +1,26 @@
-:doc:`← Getting Started <../index>`
+:doc:`← Getting Started <index>`
      
 ========
 Overview
 ========
 In this section, we will discuss:
 
-- the personal background of the auther (insofar as it informs the form and function of the ``pykal`` package)
-- the problem in robotics that ``pykal`` aims to solve
-- the proposed solution (hint: it may be the ``pykal`` package)
-- the structure of the Tutorial and how best to work through it 
+- the personal background of the auther 
+- a serious problem in robotics
+- a proposed solution (hint: it may be ``pykal``)
+- the structure of the "Tutorial"" and how best to work through it 
 
 Who am I?
 =========
-My name is Nehal Mangat, and I am a (handsome) graduate student at the University of Nevada, Reno, where I am pursuing a masters in Mechanical Engineering and Applied Mathematics. I am also a robotics research assistant in the van Breugel lab and a former intern of the Air Force Research Laboratory's Autonomous Vehicles Laboratory.
+My name is Nehal Mangat, and I am a (handsome) graduate student at the University of Nevada, Reno, where I am pursuing a masters in Mechanical Engineering and Applied Mathematics. I am also a robotics research assistant in the `van Breugel lab <https://www.florisvanbreugel.com>`_ and a former intern of the University of Florida's `Autonomous Vehicles Laboratory <https://avl.reef.ufl.edu/>`_. 
 
-I have been involved in the world of academic robotics for several years now. I love my field, but it is a shame to say that there is something rotten in the state of robotics. 
+I have been involved in the world of academic robotics for several years now. I love my field, but it is a shame to say that there is something rotten in the state of academic robotics. 
 
 The Problem
 ===========
-As of late, we have witnessed an explosion of control and estimation algorithms. This should be a good thing; certainly we should not be worse off for having more ideas.  
+Academia has witnessed an explosion of control and estimation algorithms. This should be a good thing; certainly we should not be worse off for having more ideas.  
 
-Unfortunately, academia values novelty, not utility; that is, researchers often scurry to publish novel results at the expense of useability. Since there is little incentive to test results in reality, the hardware implementation of an algorithm is passed onto future researchers -- who, pressed to publish novel results of their own, instead extend the algorithm, publish, and pass the buck along to future researchers, *ad infinitum*.
+Unfortunately, academia values novelty, not utility; that is, researchers are incentivized to publish novel results at the expense of useability. With little reason to test results in reality, the hardware implementation of an algorithm is passed onto future researchers -- who, pressed to publish novel results of their own, instead extend the algorithm, publish, and pass the buck along to future researchers, *ad infinitum*.
 
 When the day comes that the algorithm is finally implemented onto hardware, and it does not work as expected (or at all), where do we begin troubleshooting? Is it a hardware issue, a software issue, or does the real issue lie in the third paper of this algorithm's journey, where the substitution of a new numerical method lead to unforeseen consequences when faced with asynchronous sensor data? 
 
@@ -29,7 +29,7 @@ This is a tragedy of efficiency, to say nothing of the sanity lost in troublesho
 
 The Solution
 ============
-The ``pykal`` package is a Python package designed to make this path:
+The ``pykal`` package is a Python package designed to make the following transitions as painless as possible:
 
 .. container:: graphviz-tight
 
@@ -67,13 +67,11 @@ The ``pykal`` package is a Python package designed to make this path:
 
 
    
-as painless as possible. While each island can be a struggle in itself, it is on the bridges between them that good ideas die.  ``ROS`` and ``Gazebo`` are mature robotics platforms that have already eased the burden of the last bridge; ``pykal`` aims to ease the burden of the first two. How?
+`ROS <https://www.ros.org/>`_ and `Gazebo <https://gazebosim.org/home>`_  are mature open-source robotics platforms that have already eased the burden of the last bridge; ``pykal`` aims to ease the burden of the first two. How?
 
-``pykal`` uses the discrete-time dynamical system as a compositional primitive; that is, dynamical systems are the building blocks with which we implement our algorithms. Such representations of algorithms are mathematically equivalent, and so this spans the gap between Theory and Python.
+``pykal`` uses the :doc:`discrete-time dynamical system <../notebooks/tutorial/theory_to_python/dynamical_system>` as a compositional primitive in defining algorithms and control systems. Such representations are modular, easy to implement, and easy to debug, thus spanning the gap between "Theory" and "Python"".
 
-Further, such a simple compositional primitive induces a simple software API with ``ROS``, enabling the creation of wrappers that cast the ``ROS`` node architecture as networks of dynamical systems. Thus is spanned the second bridge. 
-
-The result is a pipeline from "head to hardware" that spares painful debugging on the road to reality.
+Further, a modular framework induces a simple API between Python and ROS, which lets us abstract away from the CLI and interface with ROS from a Jupyter notebook via ``pykal``. In addition to a quality of life improvement, the composition of dynamical systems has a direct correspondence with ``ROS`` node architecturem, making it possible to implement and debug such architecturs in Python before automagically translating them into ``ROS``. Thus, the second bridge from "Python" to "ROS" is spanned. 
 
 Using the Tutorial
 ==================
@@ -81,19 +79,19 @@ The "Tutorial" is split into four sections.
 
 Overview
 ^^^^^^^^
-If you have somehow managed to skip to the end of this one-page overview and are now reading this, I recommend jumping back to the beginning and reading the full overview.
+If you have managed to skip to the end of this one-page overview without reading anything, I recommend scrolling back to the beginning and reading the whole overview.
 
 Theory to Python
 ^^^^^^^^^^^^^^^^
-If you are new to this package and want to try casting algorithms/control systems as dynamical systems, start here. 
+If you are new to this package and want to try casting algorithms/control systems as dynamical systems, :doc:`start here <./theory_to_python/index>`. 
 
 Python to ROS
 ^^^^^^^^^^^^^
-If you are comfortable using ``pykal`` to cast algorithms/control systems as dynamical systems and want to begin simulating things in ``ROS``, start here.
+If you are comfortable using ``pykal`` to cast algorithms/control systems as dynamical systems and want to begin simulating things in ``ROS``, :doc:`start here <./python_to_ros/index>`. 
 
 ROS to Gazebo
 ^^^^^^^^^^^^^
-If you are comfortable simulating things in ``ROS`` and want to put it in ``Gazebo`` to see how it interacts with the world, start here. 
+If you are comfortable simulating things in ``ROS`` and to put it in ``Gazebo``, :doc:`start here <./ros_to_gazebo/index>`.
 
 
 :doc:`← Getting Started <./index>` 

@@ -260,3 +260,34 @@ ol li.has-impl-crazyflie {
 .notebook-indicator a:hover {
     text-decoration: underline;
 }
+
+/* Note section styling - render in red for better readability */
+.citation .note,
+dd .note,
+.citation-list .note,
+p.note {
+    color: #dc3545;
+    font-weight: 500;
+    font-style: italic;
+}
+
+/* Sphinxcontrib-bibtex note field styling */
+.docutils .note-field,
+.citation .field-list .field-name:contains("Note") + .field-body,
+dd > em:first-child {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+/* Target note content within bibliography entries */
+.citation dd,
+.citation-list dd {
+    color: inherit;
+}
+
+.citation dd .note,
+.citation-list dd .note {
+    color: #dc3545;
+    font-weight: 500;
+    font-style: italic;
+}

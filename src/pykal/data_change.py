@@ -3,7 +3,7 @@ Data corruption and preparation utilities for simulating and handling
 real-world hardware sensor issues in robotics applications.
 """
 
-from typing import Optional, Callable
+from typing import Optional, Union
 import numpy as np
 from numpy.typing import NDArray
 
@@ -19,95 +19,65 @@ class corrupt:
 
     @staticmethod
     def with_gaussian_noise(
-        data: NDArray,
+        data: Union[float, list, NDArray],
         std: Optional[float] = None,
         mean: Optional[float] = None,
-        Q: Optional[NDArray] = None,
-        seed: Optional[int] = None
-    ) -> NDArray:
+        cov: Optional[NDArray] = None,
+        seed: Optional[int] = None,
+    ) -> Union[float, list, NDArray]:
         """
-        Add Gaussian (normal) noise to data.
-
-        Common in analog sensors due to thermal noise, quantization, etc.
-        Supports both scalar and multivariate (correlated) noise.
-
-        Parameters
-        ----------
-        data : NDArray
-            Input data array of shape (n,) for n-dimensional data
-        std : float, optional
-            Standard deviation of noise for scalar case (default 0.1 if Q not provided)
-        mean : float, optional
-            Mean of noise distribution for scalar case (default 0.0 if Q not provided)
-        Q : NDArray, optional
-            Covariance matrix of shape (n, n) for multivariate noise.
-            If provided, std and mean are ignored. Each element can have
-            different noise characteristics with correlations.
-        seed : int, optional
-            Random seed for reproducibility
-
-        Returns
-        -------
-        NDArray
-            Data with added Gaussian noise
-
-        Examples
-        --------
-        Scalar noise (independent, same std for all elements):
-
-        >>> import numpy as np
-        >>> data = np.array([1.0, 2.0, 3.0])
-        >>> noisy = corrupt.with_gaussian_noise(data, std=0.1, seed=42)
-        >>> noisy.shape == data.shape
-        True
-        >>> np.abs(noisy - data).mean() < 0.5  # noise is bounded
-        True
-
-        Multivariate noise with covariance matrix:
-
-        >>> data = np.array([1.0, 2.0, 3.0])
-        >>> Q = np.array([[0.1, 0.02, 0.0],
-        ...               [0.02, 0.2, 0.01],
-        ...               [0.0, 0.01, 0.15]])
-        >>> noisy = corrupt.with_gaussian_noise(data, Q=Q, seed=42)
-        >>> noisy.shape == data.shape
-        True
-        >>> np.abs(noisy - data).mean() < 1.0  # noise is bounded
-        True
-
-        Different variance for each element (diagonal covariance):
-
-        >>> data = np.array([1.0, 2.0, 3.0])
-        >>> Q = np.diag([0.01, 0.1, 0.5])  # different noise per element
-        >>> noisy = corrupt.with_gaussian_noise(data, Q=Q, seed=42)
-        >>> noisy.shape == data.shape
-        True
+        Add Gaussian (normal) noise to data. Supports scalar, list, or NDArray input.
+        Returns data in the same type it was passed in.
         """
         rng = np.random.default_rng(seed)
 
-        if Q is not None:
-            # Multivariate case with covariance matrix
-            if Q.ndim != 2 or Q.shape[0] != Q.shape[1]:
-                raise ValueError("Q must be a square matrix")
-            if Q.shape[0] != len(data):
-                raise ValueError(f"Q shape {Q.shape} incompatible with data length {len(data)}")
+        # --------------------------
+        # Determine original type
+        # --------------------------
+        orig_type = type(data)
 
-            # Generate multivariate Gaussian noise with zero mean
-            noise = rng.multivariate_normal(np.zeros(len(data)), Q)
+        # Convert to array
+        data_arr = np.atleast_1d(np.asarray(data, dtype=float))
+        n = data_arr.size
+
+        # --------------------------
+        # Generate noise
+        # --------------------------
+        if cov is not None:
+            cov = np.asarray(cov, dtype=float)
+
+            if cov.ndim != 2 or cov.shape[0] != cov.shape[1]:
+                raise ValueError("cov must be a square matrix")
+
+            if cov.shape[0] != n:
+                raise ValueError(
+                    f"cov shape {cov.shape} incompatible with data length {n}"
+                )
+
+            noise = rng.multivariate_normal(mean=np.zeros(n), cov=cov)
         else:
-            # Scalar case - independent noise with same std for all elements
-            std_val = std if std is not None else 0.1
-            mean_val = mean if mean is not None else 0.0
-            noise = rng.normal(mean_val, std_val, size=data.shape)
+            std_val = 0.1 if std is None else std
+            mean_val = 0.0 if mean is None else mean
+            noise = rng.normal(loc=mean_val, scale=std_val, size=n)
 
-        return data + noise
+        out_arr = data_arr + noise
+
+        # --------------------------
+        # Restore original type
+        # --------------------------
+        if orig_type is float or (isinstance(data, np.generic) and np.isscalar(data)):
+            return out_arr.item()
+        elif orig_type is list:
+            return out_arr.tolist()
+        else:
+            return out_arr
 
     @staticmethod
     def with_bounce(
         data: NDArray,
         duration: int = 3,
         amplitude: float = 0.5,
-        seed: Optional[int] = None
+        seed: Optional[int] = None,
     ) -> NDArray:
         """
         Simulate contact bounce on digital/binary signals.
@@ -153,7 +123,7 @@ class corrupt:
                 bounce_len = end_idx - (trans_idx + 1)
                 if bounce_len > 0:
                     oscillation = amplitude * rng.choice([-1, 1], size=bounce_len)
-                    result[trans_idx + 1:end_idx] += oscillation
+                    result[trans_idx + 1 : end_idx] += oscillation
 
         return result
 
@@ -162,7 +132,7 @@ class corrupt:
         data: NDArray,
         dropout_rate: float = 0.1,
         fill_value: float = np.nan,
-        seed: Optional[int] = None
+        seed: Optional[int] = None,
     ) -> NDArray:
         """
         Randomly drop data points (packet loss, sensor failures).
@@ -232,9 +202,7 @@ class corrupt:
 
     @staticmethod
     def with_drift(
-        data: NDArray,
-        drift_rate: float = 0.01,
-        drift_type: str = "linear"
+        data: NDArray, drift_rate: float = 0.01, drift_type: str = "linear"
     ) -> NDArray:
         """
         Add time-dependent drift to data.
@@ -312,7 +280,7 @@ class corrupt:
         data: NDArray,
         spike_rate: float = 0.05,
         spike_magnitude: float = 5.0,
-        seed: Optional[int] = None
+        seed: Optional[int] = None,
     ) -> NDArray:
         """
         Add random spikes/outliers to data.
@@ -352,9 +320,7 @@ class corrupt:
 
     @staticmethod
     def with_clipping(
-        data: NDArray,
-        lower: Optional[float] = None,
-        upper: Optional[float] = None
+        data: NDArray, lower: Optional[float] = None, upper: Optional[float] = None
     ) -> NDArray:
         """
         Clip data to saturation limits (sensor saturation).
@@ -424,7 +390,7 @@ class corrupt:
         return result
 
 
-class prepare:
+class clean:
     """
     Clean and prepare corrupted sensor data.
 
@@ -467,7 +433,7 @@ class prepare:
         result = np.empty_like(data)
         for i in range(len(data)):
             start = max(0, i - window + 1)
-            result[i] = np.mean(data[start:i + 1])
+            result[i] = np.mean(data[start : i + 1])
         return result
 
     @staticmethod
@@ -547,9 +513,7 @@ class prepare:
 
     @staticmethod
     def with_debounce(
-        data: NDArray,
-        threshold: float = 0.1,
-        min_duration: int = 2
+        data: NDArray, threshold: float = 0.1, min_duration: int = 2
     ) -> NDArray:
         """
         Remove contact bounce from binary/step signals.
@@ -597,9 +561,7 @@ class prepare:
 
     @staticmethod
     def with_outlier_removal(
-        data: NDArray,
-        threshold: float = 3.0,
-        method: str = "replace"
+        data: NDArray, threshold: float = 3.0, method: str = "replace"
     ) -> NDArray:
         """
         Detect and handle outliers using z-score method.
@@ -646,9 +608,7 @@ class prepare:
             if np.any(valid):
                 valid_indices = np.where(valid)[0]
                 result[outliers] = np.interp(
-                    np.where(outliers)[0],
-                    valid_indices,
-                    data[valid]
+                    np.where(outliers)[0], valid_indices, data[valid]
                 )
         else:
             raise ValueError(f"Unknown method: {method}")
@@ -708,10 +668,7 @@ class prepare:
         return result
 
     @staticmethod
-    def with_staleness_policy(
-        data: NDArray,
-        policy: str = "hold"
-    ) -> NDArray:
+    def with_staleness_policy(data: NDArray, policy: str = "hold") -> NDArray:
         """
         Apply staleness policy to data with missing values (NaN).
 
@@ -814,7 +771,9 @@ class prepare:
             )
 
     @staticmethod
-    def with_calibration(data: NDArray, offset: float = 0.0, scale: float = 1.0) -> NDArray:
+    def with_calibration(
+        data: NDArray, offset: float = 0.0, scale: float = 1.0
+    ) -> NDArray:
         """
         Apply calibration (remove bias, scale correction).
 
@@ -843,10 +802,7 @@ class prepare:
         return (data - offset) * scale
 
     @staticmethod
-    def with_low_pass_filter(
-        data: NDArray,
-        alpha: float = 0.2
-    ) -> NDArray:
+    def with_low_pass_filter(data: NDArray, alpha: float = 0.2) -> NDArray:
         """
         Simple first-order low-pass filter (RC filter).
 
@@ -885,7 +841,7 @@ class prepare:
         data: NDArray,
         lower: Optional[float] = None,
         upper: Optional[float] = None,
-        mark_invalid: bool = False
+        mark_invalid: bool = False,
     ) -> NDArray:
         """
         Detect and handle clipped/saturated values.

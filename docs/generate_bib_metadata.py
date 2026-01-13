@@ -35,12 +35,12 @@ def parse_bibtex_entry(entry_text):
     return key, metadata
 
 
-def generate_metadata_js(bib_file, output_file):
+def generate_metadata_js(bib_file, output_file, var_name='PAPER_METADATA'):
     """Generate JavaScript file with metadata from BibTeX."""
     bib_content = bib_file.read_text()
 
     # Split into individual entries
-    entries = re.split(r'@(?=article|book|inproceedings|proceedings|incollection)', bib_content)
+    entries = re.split(r'@(?=article|book|inproceedings|proceedings|incollection|misc|phdthesis)', bib_content)
 
     metadata_dict = {}
     for entry in entries:
@@ -51,10 +51,10 @@ def generate_metadata_js(bib_file, output_file):
                 metadata_dict[key] = metadata
 
     # Generate JavaScript content
-    js_content = f"""// Auto-generated from references.bib
+    js_content = f"""// Auto-generated from {bib_file.name}
 // Do not edit manually - run generate_bib_metadata.py instead
 
-const PAPER_METADATA = {json.dumps(metadata_dict, indent=2)};
+const {var_name} = {json.dumps(metadata_dict, indent=2)};
 """
 
     output_file.write_text(js_content)
@@ -63,6 +63,8 @@ const PAPER_METADATA = {json.dumps(metadata_dict, indent=2)};
 
 if __name__ == '__main__':
     script_dir = Path(__file__).parent
+
+    # Generate metadata for main algorithm library
     bib_file = script_dir / 'source' / 'references.bib'
     output_file = script_dir / 'source' / '_static' / 'js' / 'bib_metadata.js'
 
@@ -70,4 +72,13 @@ if __name__ == '__main__':
         print(f"Error: {bib_file} not found")
         exit(1)
 
-    generate_metadata_js(bib_file, output_file)
+    generate_metadata_js(bib_file, output_file, var_name='PAPER_METADATA')
+
+    # Generate metadata for community library
+    community_bib_file = script_dir / 'source' / 'community_references.bib'
+    community_output_file = script_dir / 'source' / '_static' / 'js' / 'community_bib_metadata.js'
+
+    if community_bib_file.exists():
+        generate_metadata_js(community_bib_file, community_output_file, var_name='COMMUNITY_METADATA')
+    else:
+        print(f"Warning: {community_bib_file} not found (will be created when first contribution is added)")

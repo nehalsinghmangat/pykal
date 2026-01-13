@@ -52,7 +52,43 @@ myst_update_mathjax = False
 # "force" - always execute on every build
 #
 # Individual notebooks can override this with mystnb.execution_mode metadata
-nb_execution_mode = "off"  # Execute only notebooks without saved outputs
+nb_execution_mode = "cache"  # Execute and cache, re-run only on code changes
+
+# Execution cache directory (stores execution results)
+nb_execution_cache_path = ".jupyter_cache"
+
+# Maximum execution time per cell (in seconds)
+nb_execution_timeout = 300  # 5 minutes per cell
+
+# Kernel to use for execution
+nb_kernel_rgx_aliases = {"python3": "python3"}
+
+# Cell execution configuration
+nb_execution_excludepatterns = []  # Exclude specific notebooks from execution
+nb_execution_raise_on_error = False  # Don't fail build on notebook errors
+
+# Cell tag configuration
+# These tags control cell behavior during build:
+# - "hide-input": Hide the code cell input (keep output visible)
+# - "hide-output": Hide the cell output (keep code visible)
+# - "remove-cell": Remove the entire cell from output
+# - "skip-execution": Don't execute this cell (use saved outputs)
+nb_execution_show_tb = True  # Show full traceback on execution errors
+
+# Render configuration for cell tags
+nb_render_priority = {
+    "html": (
+        "application/vnd.jupyter.widget-view+json",
+        "application/javascript",
+        "text/html",
+        "image/svg+xml",
+        "image/png",
+        "image/jpeg",
+        "text/markdown",
+        "text/latex",
+        "text/plain",
+    )
+}
 
 
 # Autodoc default behavior for documenting modules

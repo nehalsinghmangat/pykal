@@ -15,8 +15,7 @@ This section consists of tips, tricks, and usage examples of the ``pykal.ROSNode
 ..  toctree::
     :maxdepth: 2
 
-    ../../notebooks/tutorial/python_to_ros/rosnode
+    ../../notebooks/tutorial/python_to_ros/ros_node
     ../../notebooks/tutorial/python_to_ros/ros2py_py2ros
-    custom_messages
 
 :doc:`← Python to ROS <index>`    

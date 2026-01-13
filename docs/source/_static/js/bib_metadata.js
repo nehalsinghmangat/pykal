@@ -75,7 +75,28 @@ const PAPER_METADATA = {
   "siegwart2011introduction": {
     "keywords": "control",
     "category": "",
+    "impl_pykal": "",
+    "impl_turtlebot": "",
+    "impl_crazyflie": ""
+  },
+  "bouabdallah2007design": {
+    "keywords": "control",
+    "category": "",
+    "impl_pykal": "",
+    "impl_turtlebot": "",
+    "impl_crazyflie": ""
+  },
+  "pykal:turtlebot_estimation": {
+    "keywords": "estimation",
+    "category": "",
     "impl_pykal": "notebooks/tutorial/theory_to_python/turtlebot_state_estimation.ipynb",
+    "impl_turtlebot": "",
+    "impl_crazyflie": ""
+  },
+  "pykal:crazyflie_fusion": {
+    "keywords": "estimation",
+    "category": "",
+    "impl_pykal": "notebooks/tutorial/theory_to_python/crazyflie_sensor_fusion.ipynb",
     "impl_turtlebot": "",
     "impl_crazyflie": ""
   }

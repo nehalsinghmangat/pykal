@@ -1,18 +1,18 @@
 import numpy as np
-from numpy.typing import NDArray
-from typing import Callable, Dict, Tuple
+from numpy.typing import ArrayLike, NDArray
+from typing import Any, Callable, Dict, Tuple
+from pykal.dynamical_system import DynamicalSystem
 
 
 class KF:
     @staticmethod
     def f(
         *,
-        xhat_P: Tuple[NDArray, NDArray],
+        zk: Tuple[NDArray, NDArray],
         yk: NDArray,
         f: Callable,
-        f_params: Dict,
+        f_h_params: Dict,
         h: Callable,
-        h_params: Dict,
         Fk: NDArray,
         Qk: NDArray,
         Hk: NDArray,
@@ -20,100 +20,17 @@ class KF:
     ) -> Tuple[NDArray, NDArray]:
         """
         Perform one full **predict–update** step of the discrete-time Kalman Filter.
-
-        Parameters
-        ----------
-        xhat_P : Tuple[NDArray, NDArray]
-            A tuple ``(x_hat_k, P_k)`` containing:
-                - ``x_hat_k`` : the current estimated state of the plant, shape (n,1)
-                - ``P_k``     : the current state covariance, shape (n,n)
-
-        yk : NDArray
-            The measurement at time k, shape (m,1).
-
-        f : Callable
-            The plant evolution function used to propagate the estimated mean:
-                ``x_pred = f(**f_params)``
-            This should return the **noise-free** predicted state.
-
-        f_params : Dict
-            Dictionary of parameters passed to the evolution function ``f``.
-
-        h : Callable
-            The plant output function used to compute the predicted measurement:
-                ``y_pred = h(**h_params)``
-            This should return the **noise-free** predicted measurement.
-
-        h_params : Dict
-            Dictionary of parameters passed to the measurement function ``h``.
-
-        Fk : NDArray
-            The state-transition Jacobian evaluated at the current estimate,
-            used to propagate the covariance. Shape (n,n).
-
-        Qk : NDArray
-            The process-noise covariance matrix at time k, shape (n,n).
-
-        Hk : NDArray
-            The measurement Jacobian evaluated at the current estimate,
-            used in the update. Shape (m,n).
-
-        Rk : NDArray
-            The measurement-noise covariance matrix at time k, shape (m,m).
-
-
-        Returns
-        -------
-        (x_upd, P_upd) : Tuple[NDArray, NDArray]
-            The updated state estimate and covariance:
-                - ``x_upd`` : updated state estimate, shape (n,1)
-                - ``P_upd`` : updated state covariance, shape (n,n)
-
-
-        Notes
-        -----
-        This implementation follows the standard **linearized EKF equations**:
-
-        **Predict step**
-        ----------------
-        State prediction:
-            ``x_pred = f(**f_params)``
-
-        Covariance prediction:
-            ``P_pred = Fk @ Pk @ Fk.T + Qk``
-
-        **Update step**
-        ---------------
-        Innovation:
-            ``innovation = yk - y_pred``
-            where ``y_pred = h(**h_params)``
-
-        Innovation covariance:
-            ``Sk = Hk @ P_pred @ Hk.T + Rk``
-
-        Kalman gain:
-            ``Kk = P_pred @ Hk.T @ Sk^{-1}``
-
-        State update:
-            ``x_upd = x_pred + Kk @ innovation``
-
-        Covariance update (Joseph form for numerical stability):
-            ``P_upd = (I - Kk @ Hk) @ P_pred @ (I - Kk @ Hk).T + Kk @ Rk @ Kk.T``
-
-        The covariance matrix is explicitly symmetrized at the end to counter
-        numerical drift:
-            ``P_upd = 0.5 * (P_upd + P_upd.T)``
         """
 
         # === Extract covariance ===
-        _, Pk = xhat_P
+        _, Pk = zk
 
         # === Predict ===
-        x_pred = f(**f_params)
+        x_pred = DynamicalSystem._smart_call(f, f_h_params)
         P_pred = Fk @ Pk @ Fk.T + Qk
 
         # === Innovation ===
-        y_pred = h(**h_params)
+        y_pred = DynamicalSystem._smart_call(h, f_h_params)
         innovation = yk - y_pred
 
         # === Update ===
@@ -134,9 +51,9 @@ class KF:
         return (x_upd, P_upd)
 
     @staticmethod
-    def h(xhat_P: Tuple[NDArray, NDArray]) -> NDArray:
+    def h(zk: Tuple[NDArray, NDArray]) -> NDArray:
         # extracts current state estimate
-        return xhat_P[0]
+        return zk[0]
 
 
 # Module-level aliases for convenience

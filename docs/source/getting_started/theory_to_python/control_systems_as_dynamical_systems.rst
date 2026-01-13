@@ -10,7 +10,7 @@
     
 This section consists of three examples of using the ``pykal.DynamicalSystem`` and ``pykal.DataChange`` modules to model and simulate control systems.
 
-"Example: Car Cruise Control" walks the reader through modeling a classic feedback system as the compostion of dynamical systems. We recommended starting here.
+"Example: Car Cruise Control" walks the reader through modeling a classic feedback system as the composition of dynamical systems. We recommended starting here.
 
 "Example: Turtlebot with Noisy Odometry" walks the reader through modeling a simple ``ROS`` robot with realistic noisy data. 
 
