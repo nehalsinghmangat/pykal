@@ -29,7 +29,7 @@ from sensor_msgs.msg import (
     CompressedImage,
     JointState,
 )
-from std_msgs.msg import Header, Float64, Float64MultiArray, Int32MultiArray, UInt8MultiArray
+from std_msgs.msg import Header, Float64, Float64MultiArray, Int32, Int32MultiArray, UInt8MultiArray
 from builtin_interfaces.msg import Time
 
 
@@ -920,6 +920,23 @@ def py2ros_float64(arr: NDArray) -> Float64:
     return msg
 
 
+# ---------------------------------------------------------------------------
+# std_msgs/Int32  <->  scalar int (as 1D array)
+# ---------------------------------------------------------------------------
+
+def ros2py_int32(msg: Int32) -> NDArray:
+    """Convert Int32 message to 1D numpy array with single element."""
+    return np.array([msg.data], dtype=np.int32)
+
+
+def py2ros_int32(arr: NDArray) -> Int32:
+    """Convert scalar or 1D array to Int32 message."""
+    msg = Int32()
+    arr = np.asarray(arr, dtype=np.int32).ravel()
+    msg.data = int(arr[0]) if arr.size > 0 else 0
+    return msg
+
+
 def ros2py_pose(msg: Pose) -> np.ndarray:
     """
     Convert a ROS 2 turtlesim/Pose message into a NumPy array.
@@ -985,6 +1002,7 @@ ROS2PY_DEFAULT = {
     CompressedImage: ros2py_compressed_image,
     Float64: ros2py_float64,
     Float64MultiArray: ros2py_float64_multiarray,
+    Int32: ros2py_int32,
     Int32MultiArray: ros2py_int32_multiarray,
     UInt8MultiArray: ros2py_uint8_multiarray,
     # add more as needed
@@ -1009,6 +1027,7 @@ PY2ROS_DEFAULT = {
     CompressedImage: py2ros_compressed_image,
     Float64: py2ros_float64,
     Float64MultiArray: py2ros_float64_multiarray,
+    Int32: py2ros_int32,
     Int32MultiArray: py2ros_int32_multiarray,
     UInt8MultiArray: py2ros_uint8_multiarray,
     # add more as needed

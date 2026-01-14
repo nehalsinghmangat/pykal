@@ -13,7 +13,11 @@ This section demonstrates how to deploy the dynamical systems you created in the
 ..  toctree::
     :maxdepth: 2
 
+    ../../notebooks/tutorial/python_to_ros/cruise_control_ros_deployment	       
     ../../notebooks/tutorial/python_to_ros/turtlebot_ros_deployment
     ../../notebooks/tutorial/python_to_ros/crazyflie_ros_deployment
 
+
 :doc:`← Python to ROS <index>`
+
+     
